@@ -1,3 +1,10 @@
+bison.tab.c
+bison.tab.h
+compiler
+lex.yy.c
+program2.imp
+
+
 # Prerequisites
 *.d
 
