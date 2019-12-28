@@ -1,7 +1,60 @@
 %{
-#include "compilerLogic.hpp"
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <stdarg.h>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <map>
+#include <vector>
+#include <algorithm>
+using namespace std;
 
-int yylex();
+typedef struct {
+	string name;
+    string type; //NUM, IDE, ARR
+    int initialized;
+    int counter;
+   long long int begin;
+	long long int mem;
+	long long int local;
+  	long long int tableSize;
+} Identifier;
+
+vector<string> codeStack;
+map<string, Identifier> identifierStack;
+
+
+int memCounter;
+int assignFlag;
+Identifier assignTarget;
+string tabAssignTargetIndex = "-1";
+string expressionArguments[2] = {"-1", "-1"};
+string argumentsTabIndex[2] = {"-1", "-1"};
+
+//BISON
+void ident(string variable, int yylineo);
+void identIdent(string tab, string i, int yylineo);
+void identNum(string tab, string num, int yylineo);
+void declareIdent(string variable, int yylineno);
+void declareArr(string variable, string begin, string end, int yylineno);
+
+//HELPERS
+void createIdentifier(Identifier *s, string name, long long int isLocal, long long int isArray, string type, long long int begin);
+void insertIdentifier(string key, Identifier i);
+void removeIdentifier(string key);
+void setUp();
+
+//MACHINE
+void registerToMem(long long int mem);
+void memToRegister(long long int mem);
+void pushCommand(string str);
+void pushCommandOneArg(string str, long long int num);
+
+extern int yylex();
 extern int yylineno;
 extern FILE *yyin;
 void yyerror(const string str);
@@ -10,7 +63,6 @@ void yyerror(const string str);
 
 %define parse.error verbose
 %define parse.lac full //%expect 2
-
 %union {
     char* str;
     long long int num;
@@ -30,10 +82,10 @@ program:
     ;
 
 declarations:
-    declarations COMMA IDENTIFIER { cout << "declaration1" << endl; }
-    | declarations COMMA IDENTIFIER LB NUM COL NUM RB { cout << "declaration2" << endl; }
-    | IDENTIFIER { cout << "declaration3" << endl; }
-    | IDENTIFIER LB NUM COL NUM RB { cout << "declaration4" << endl; }
+    declarations COMMA IDENTIFIER { declareIdent($3, yylineno);}
+    | declarations COMMA IDENTIFIER LB NUM COL NUM RB {  declareArr($3,$5,$7,yylineno); }
+    | IDENTIFIER { declareIdent($1, yylineno); }
+    | IDENTIFIER LB NUM COL NUM RB { declareArr($1,$3,$5,yylineno); }
     ;
 
 commands:
@@ -42,7 +94,43 @@ commands:
     ;
 
 command:
-    IDENTIFIER ASSIGN expression SEM              { cout << "assign" << endl; }
+    identifier ASSIGN  {
+    	assignFlag = 0;
+    }  expression SEM {
+   	 if(assignTarget.type == "ARR") {
+     	 cout<<tabAssignTargetIndex;
+      	Identifier index = identifierStack.at(tabAssignTargetIndex);
+      		if(index.type == "NUM") {
+      			 if(stoi(index.name) < assignTarget.begin || stoi(index.name) >= assignTarget.begin + assignTarget.tableSize) {
+      			 	cout << "Błąd [okolice linii " << yylineno << \
+            		"]: Element z poza tablicy" << assignTarget.name<<"[" << stoi(index.name) << "]" << endl;
+      				exit(1);
+      			 }
+                long long int tabElMem = assignTarget.mem + (assignTarget.begin - stoi(index.name));
+                registerToMem(tabElMem);
+                removeIdentifier(index.name);
+            }
+            else {
+             /*   registerToMem(1);
+                memToRegister(assignTarget.mem);
+                pushCommandOneArg("ADD", (assignTarget.begin - stoi(index.name));
+                registerToMem(2);
+                memToRegister(1);
+                pushCommandOneArg("STOREI", 2);*/
+            }
+        }
+        else if(assignTarget.local == 0) {
+            registerToMem(assignTarget.mem);
+        }
+      	else {
+            cout << "Błąd [okolice linii " << yylineno << \
+            "]: Próba modyfikacji iteratora pętli." << endl;
+      		exit(1);
+      	}
+      	
+      identifierStack.at(assignTarget.name).initialized = 1;
+      assignFlag = 1;
+    }
     | IF condition THEN commands ELSE commands ENDIF { cout << "else" << endl; }  
     | IF condition THEN commands ENDIF { cout << "if" << endl; }            
     | WHILE condition DO commands ENDWHILE { cout << "while" << endl; }
@@ -77,15 +165,242 @@ value:
     ;
 
 identifier:
-    IDENTIFIER                                     { cout << "ide" << endl; }
-    | IDENTIFIER LB IDENTIFIER RB               { cout << "ide ( ide )" << endl; }
-    | IDENTIFIER LB NUM RB                   { cout << "ide ( num )" << endl; }
+    IDENTIFIER                                     { ident($1, yylineno); }
+    | IDENTIFIER LB IDENTIFIER RB               { identIdent($1,$3, yylineno); }
+    | IDENTIFIER LB NUM RB                   { identNum($1,$3, yylineno); }
     ;
 
 %%
+
+
+void setUp() {
+		assignFlag = 1;
+		memCounter = 5;
+}
+
+void registerToMem(long long int mem) {
+	pushCommandOneArg("STORE", mem);
+}
+
+void memToRegister(long long int mem) {
+	pushCommandOneArg("LOAD", mem);
+	/*registerValue = -1;*/
+}
+
+void pushCommand(string str) {
+    cout << str << endl;
+    codeStack.push_back(str);
+}
+
+void pushCommandOneArg(string str, long long int num) {
+    cout << str << endl;
+    string temp = str + " " + to_string(num);
+    codeStack.push_back(temp);
+}
+
+void declareIdent(string variable, int yylineno) {
+        if(identifierStack.find(variable)!=identifierStack.end()) {
+            cout << "Błąd [okolice linii " << yylineno \
+            << "]: Kolejna deklaracja zmiennej " << variable << endl;
+            exit(1);
+        }
+        else {
+            Identifier s;
+            createIdentifier(&s, variable, 0, 0, "IDE", 0);
+            insertIdentifier(variable, s);
+        }
+}
+
+void declareArr(string variable, string begin, string end, int yylineno) {
+       
+       if(identifierStack.find(variable)!=identifierStack.end()) {
+            cout << "Błąd [okolice linii " << yylineno \
+            << "]: Kolejna deklaracja zmiennej " << variable<< endl;
+            exit(1);
+        }
+        else if (stoi(begin) > stoi(end)) {
+            cout << "Błąd [okolice linii " << yylineno \
+            << "]: Deklarowanie tablicy" << variable << "o końcowym index'ie mniejszym niż początkowym" << endl;
+            exit(1);
+        }
+        else {
+            long long int size = stoi(end) - stoi(begin) + 1; 
+            Identifier s;
+            createIdentifier(&s, variable, 0, size, "ARR", stoi(begin));
+            insertIdentifier(variable, s);
+            memCounter += size; // może size - 1, bo przy insertIdentifire dodawana jest juz 1
+            //setRegister(to_string(s.mem+1));	// do p0 wprowadz numer rejestru w ktorym zaczyna sie tab
+            //registerToMem(s.mem); po co przy deklaracji zapisywać w komorce jej adres				
+        }
+}
+
+
+void ident(string variable, int yylineo) {
+
+        if(identifierStack.find(variable) == identifierStack.end()) {
+            cout << "Line: " << yylineno << ". Error: Undeclared variable " << variable << endl;
+            exit(1);
+        }
+        
+        if(identifierStack.at(variable).tableSize == 0) {
+            if(!assignFlag) {
+                if(identifierStack.at(variable).initialized == 0) {
+                    cout << "Błąd [okolice linii " << yylineno << \
+                    "]: Próba użycia niezainicjalizowanej zmiennej " << variable << "." << endl;
+                    exit(1);
+                }
+                if (expressionArguments[0] == "-1"){
+                    expressionArguments[0] = variable;
+                }
+                else{
+                    expressionArguments[1] = variable;
+                }
+
+            }
+            else {
+                assignTarget = identifierStack.at(variable);
+            }
+        }
+        else {
+          cout << "Błąd [okolice linii " << yylineno << \
+          "]: Brak odwołania do elementu tablicy " << variable << "." << endl;
+          exit(1);
+        }
+}
+
+void identIdent(string tab, string i, int yylineo) {
+		if(identifierStack.find(tab) == identifierStack.end()) {
+            cout << "Błąd [okolice linii " << yylineno << \
+            "]: Zmienna " << tab << " nie została zadeklarowana." << endl;
+            exit(1);
+        }
+        
+        if(identifierStack.find(i) == identifierStack.end()) {
+            cout << "Błąd [okolice linii " << yylineno << \
+            "]: Zmienna " << i << " nie została zadeklarowana." << endl;
+            exit(1);
+        }
+
+        if(identifierStack.at(tab).tableSize == 0) {
+            cout << "Błąd [okolice linii " << yylineno << \
+            "]: Zmienna " << tab << " nie jest tablicą." << endl;
+            exit(1);
+        }
+        
+        if(identifierStack.at(i).initialized == 0) {
+             cout << "Błąd [okolice linii " << yylineno << \
+            "]: Próba użycia niezainicjalizowanej zmiennej " << i << "." << endl;
+             exit(1);
+       }
+
+       if(!assignFlag) {
+                //TODO czy wywalać błąd niezainicjalizowanej
+                //zmiennej dla elementu tablicy-> raczej nie ma czasu ;/
+         if (expressionArguments[0] == "-1"){
+            	expressionArguments[0] = tab;
+               argumentsTabIndex[0] = i;
+         }
+         else {
+         	expressionArguments[1] = tab;
+            argumentsTabIndex[1] = i;
+         }
+		} else {
+                assignTarget = identifierStack.at(tab);
+                tabAssignTargetIndex = i;
+      }
+}
+
+void identNum(string tab, string num, int yylineo) {
+	if(identifierStack.find(tab) == identifierStack.end()) {
+            cout << "Błąd [okolice linii " << yylineno << \
+            "]: Zmienna " << tab << " nie została zadeklarowana." << endl;
+            exit(1);
+        }
+
+        if(identifierStack.at(tab).tableSize == 0) {
+            cout << "Błąd [okolice linii " << yylineno << \
+            "]: Zmienna " << tab << " nie jest tablicą." << endl;
+            exit(1);
+        }
+        
+        else {
+            Identifier s;
+            createIdentifier(&s, num, 0, 0, "NUM", 0);
+            insertIdentifier(num, s);
+
+            if(!assignFlag){
+                //TODO czy wywalać błąd niezainicjalizowanej
+                //zmiennej dla elementu tablicy
+                if (expressionArguments[0] == "-1"){
+                    expressionArguments[0] = tab;
+                    argumentsTabIndex[0] = num;
+                }
+                else{
+                    expressionArguments[1] = tab;
+                    argumentsTabIndex[1] = num;
+                }
+
+            }
+            else {
+                assignTarget = identifierStack.at(tab);
+                tabAssignTargetIndex = num;
+            }
+        }
+}
+
+void insertIdentifier(string key, Identifier i) {
+    if(identifierStack.count(key) == 0) {
+        identifierStack.insert(make_pair(key, i));
+        identifierStack.at(key).counter = 0;
+        memCounter++;	// czy potrzebne jest dodawanie 1 gdy dodaje sie tablice?
+    }
+    else {
+        identifierStack.at(key).counter = identifierStack.at(key).counter+1;
+    }
+    /*cout << "Add: " << key << " " << memCounter-1 << endl;*/
+}
+
+void createIdentifier(Identifier *s, string name, long long int isLocal,
+    long long int isArray, string type, long long int begin){
+    s->name = name;
+    s->mem = memCounter;	//ktore komorki zajmuje zmienna, gdzie sie zaczyna
+    s->type = type;
+    s->initialized = 0;
+    
+    if(isLocal){
+    	s->local = 1;
+    }else{
+    	s->local = 0;
+    }
+    
+    if(isArray){
+      s->tableSize = isArray;
+    }else{
+      s->tableSize = 0;
+    }
+    
+    s->begin = begin;
+}
+
+void removeIdentifier(string key) {
+    if(identifierStack.count(key) > 0) {
+        if(identifierStack.at(key).counter > 0) {
+            identifierStack.at(key).counter = identifierStack.at(key).counter-1;
+        }
+        else {
+            identifierStack.erase(key);
+            memCounter--;
+        }
+    }
+    //cout << "Remove: " << key << endl;
+}
+
+
+
  void yyerror (const string str) {
-   cout << "Error" << str << endl;
- }
+   cout << "Line: " << yylineno <<". Error: " << str << endl;
+   exit(1);
+  }
  
 int main(int argv, char* argc[]) {
     if (argv != 3) {
@@ -98,9 +413,10 @@ int main(int argv, char* argc[]) {
     	cout << (argc[1], 0, "File does not exist:");
     	exit(1);
     } else {
+    setUp();
     yyparse();
     //printToFile(argc[2]);
-    cout << "\nCompiled without errors \n" << endl;
+    cout << "\n#Compiled without errors \n" << endl;
     }
 	return 0;
 }

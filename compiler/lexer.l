@@ -57,7 +57,7 @@
 
 
 
-[0-9]+          { yylval.str = (char *)strdup(yytext); return NUM; }
+-?[0-9]+          { yylval.str = (char *)strdup(yytext); return NUM; }
 [_a-z]+         { yylval.str = (char *)strdup(yytext); return IDENTIFIER; }
 
 ";"            return SEM;
