@@ -30,6 +30,7 @@ map<string, Identifier> identifierStack;
 
 int memCounter;
 int assignFlag;
+int writeFlag;
 Identifier assignTarget;
 string tabAssignTargetIndex = "-1";
 string expressionArguments[2] = {"-1", "-1"};
@@ -41,6 +42,8 @@ void identIdent(string tab, string i, int yylineo);
 void identNum(string tab, string num, int yylineo);
 void declareIdent(string variable, int yylineno);
 void declareArr(string variable, string begin, string end, int yylineno);
+void number(string variable, int yylineno);
+void soloValue();
 
 //HELPERS
 void createIdentifier(Identifier *s, string name, long long int isLocal, long long int isArray, string type, long long int begin);
@@ -80,8 +83,8 @@ void yyerror(const string str);
 
 %%
 program:
-    DECLARE declarations BEG commands END { cout << "halt";}//insert("HALT"); }
-    | BEG commands END
+    DECLARE declarations BEG commands END { pushCommand("HALT"); }
+    | BEG commands END  { pushCommand("HALT"); }
     ;
 
 declarations:
@@ -111,7 +114,6 @@ command:
       			 }
                 long long int tabElMem = assignTarget.mem + (stoi(index.name) - assignTarget.begin);
                 registerToMem(tabElMem);
-                cout<<"store to:"<< tabElMem;
                 removeIdentifier(index.name);
             }
             else {
@@ -145,11 +147,14 @@ command:
     | FOR IDENTIFIER FROM value TO value DO commands ENDFOR { cout << "for" << endl; }
     | FOR IDENTIFIER FROM value DOWNTO value DO commands ENDFOR { cout << "downfor" << endl; }
     | READ identifier SEM                         { cout << "read" << endl; }
-    | WRITE value SEM                             { cout << "write" << endl; }
+    | WRITE {
+      	writeFlag = 0;
+			assignFlag = 1;
+		} value SEM                                  { cout << "write" << endl; }
     ;
 
 expression:
-    value                                          { cout << "value" << endl; }
+    value                                          { soloValue(); }
     | value ADD value                              { cout << "add" << endl; }
     | value SUB value                              { cout << "sub" << endl; }
     | value MUL value                              { cout << "mul" << endl; }
@@ -167,7 +172,7 @@ condition:
     ;
 
 value:
-    NUM                                         { cout << "num" << endl; }
+    NUM                                         { number($1, yylineno); }
     | identifier
     ;
 
@@ -181,6 +186,8 @@ identifier:
 
 
 void setUp() {
+
+    	writeFlag = 0;
 		assignFlag = 1;
 		memCounter = 5;
 		
@@ -193,6 +200,7 @@ void setUp() {
 		pushCommand("# 1 to p2");
 		pushCommand("INC");
 		registerToMem(2);
+		pushCommand("#SET UP END");
 }
 
 void registerToMem(long long int mem) {
@@ -246,6 +254,56 @@ string decToBin(long long int n) {
     string r;
     while(n!=0) {r=(n%2==0 ?"0":"1")+r; n/=2;}
     return r;
+}
+
+void soloValue() {
+	Identifier value = identifierStack.at(expressionArguments[0]);
+        if(value.type == "NUM") {
+            setRegister(value.name);
+            removeIdentifier(value.name);
+        }
+        else if(value.type == "IDE") {
+            memToRegister(value.mem);
+        }
+        else {
+            Identifier index = identifierStack.at(argumentsTabIndex[0]);
+            if(index.type == "NUM") {
+
+                long long int tabElMem = value.mem + (stoi(index.name) - assignTarget.begin);
+                memToRegister(tabElMem);
+                removeIdentifier(index.name);
+            }
+            else {
+            	 setRegister(to_string(value.begin));
+                pushCommandOneArg("SUB", index.mem);
+                registerToMem(3);
+                setRegister(to_string(value.mem));
+                pushCommandOneArg("SUB", 3);
+                pushCommandOneArg("LOADI", 0);             
+            }
+        }
+        
+   if (!writeFlag) {
+   	expressionArguments[0] = "-1";
+  		argumentsTabIndex[0] = "-1";
+   }
+}
+
+void number(string variable, int yylineno) {
+	if (assignFlag) {
+   	cout << "Błąd [okolice linii " << yylineno << \
+   	  "]: Próba przypisania do stałej." << endl;
+           	exit(1);
+    }
+    
+    Identifier s;
+    createIdentifier(&s, variable, 0, 0, "NUM",0);
+    insertIdentifier(variable, s);
+    if (expressionArguments[0] == "-1"){
+    	expressionArguments[0] = variable;
+    } else {
+    	expressionArguments[1] = variable;
+    }
 }
 
 void declareIdent(string variable, int yylineno) {
