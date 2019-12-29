@@ -237,7 +237,7 @@ void setRegister(string number) {
 			/*registerValue++;*/
 		}
 		if(i < (limit - 1)){
-	        pushCommand("SHL");
+	        pushCommandOneArg("SHIFT", 2);
 	        /*registerValue *= 2;*/
 		}
 	}
