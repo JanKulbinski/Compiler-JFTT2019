@@ -15,9 +15,9 @@ using namespace std;
 
 typedef struct {
 	string name;
-    string type; //NUM, IDE, ARR
-    int initialized;
-    int counter;
+   string type; //NUM, IDE, ARR
+   int initialized;
+   int counter;
    long long int begin;
 	long long int mem;
 	long long int local;
@@ -47,10 +47,13 @@ void createIdentifier(Identifier *s, string name, long long int isLocal, long lo
 void insertIdentifier(string key, Identifier i);
 void removeIdentifier(string key);
 void setUp();
+string decToBin(long long int n);
 
 //MACHINE
 void registerToMem(long long int mem);
 void memToRegister(long long int mem);
+void setRegister(string number);
+void zeroRegister();
 void pushCommand(string str);
 void pushCommandOneArg(string str, long long int num);
 
@@ -98,7 +101,7 @@ command:
     	assignFlag = 0;
     }  expression SEM {
    	 if(assignTarget.type == "ARR") {
-     	 cout<<tabAssignTargetIndex;
+
       	Identifier index = identifierStack.at(tabAssignTargetIndex);
       		if(index.type == "NUM") {
       			 if(stoi(index.name) < assignTarget.begin || stoi(index.name) >= assignTarget.begin + assignTarget.tableSize) {
@@ -106,17 +109,21 @@ command:
             		"]: Element z poza tablicy" << assignTarget.name<<"[" << stoi(index.name) << "]" << endl;
       				exit(1);
       			 }
-                long long int tabElMem = assignTarget.mem + (assignTarget.begin - stoi(index.name));
+                long long int tabElMem = assignTarget.mem + (stoi(index.name) - assignTarget.begin);
                 registerToMem(tabElMem);
+                cout<<"store to:"<< tabElMem;
                 removeIdentifier(index.name);
             }
             else {
-             /*   registerToMem(1);
-                memToRegister(assignTarget.mem);
-                pushCommandOneArg("ADD", (assignTarget.begin - stoi(index.name));
-                registerToMem(2);
-                memToRegister(1);
-                pushCommandOneArg("STOREI", 2);*/
+             	 registerToMem(3);
+                setRegister(to_string(assignTarget.begin));
+                pushCommandOneArg("SUB", index.mem);
+                registerToMem(4);
+                setRegister(to_string(assignTarget.mem));
+                pushCommandOneArg("SUB", 4);
+                registerToMem(4);
+                memToRegister(3);
+                pushCommandOneArg("STOREI", 4);
             }
         }
         else if(assignTarget.local == 0) {
@@ -176,6 +183,16 @@ identifier:
 void setUp() {
 		assignFlag = 1;
 		memCounter = 5;
+		
+		//create 0
+		pushCommand("# 0 to p1");
+		pushCommandOneArg("SUB", 0);
+		registerToMem(1);
+		
+		//create 1
+		pushCommand("# 1 to p2");
+		pushCommand("INC");
+		registerToMem(2);
 }
 
 void registerToMem(long long int mem) {
@@ -193,9 +210,42 @@ void pushCommand(string str) {
 }
 
 void pushCommandOneArg(string str, long long int num) {
-    cout << str << endl;
     string temp = str + " " + to_string(num);
+    cout << temp << endl;
     codeStack.push_back(temp);
+}
+
+void setRegister(string number) {
+    long long int n = stoll(number);
+    string bin = decToBin(n);
+	long long int limit = bin.size();
+    zeroRegister();
+	for(long long int i = 0; i < limit; ++i){
+		if(bin[i] == '1'){
+			if(n > 0)
+			pushCommand("INC");
+			else
+			pushCommand("DEC");
+			/*registerValue++;*/
+		}
+		if(i < (limit - 1)){
+	        pushCommand("SHL");
+	        /*registerValue *= 2;*/
+		}
+	}
+}
+
+void zeroRegister() {
+	/*if(registerValue != 0){*/
+		memToRegister(1);
+		/*registerValue = 0;*/
+	/*}*/
+}
+
+string decToBin(long long int n) {
+    string r;
+    while(n!=0) {r=(n%2==0 ?"0":"1")+r; n/=2;}
+    return r;
 }
 
 void declareIdent(string variable, int yylineno) {
@@ -228,7 +278,7 @@ void declareArr(string variable, string begin, string end, int yylineno) {
             Identifier s;
             createIdentifier(&s, variable, 0, size, "ARR", stoi(begin));
             insertIdentifier(variable, s);
-            memCounter += size; // może size - 1, bo przy insertIdentifire dodawana jest juz 1
+            memCounter += size-1; // może size - 1, bo przy insertIdentifire dodawana jest juz 1
             //setRegister(to_string(s.mem+1));	// do p0 wprowadz numer rejestru w ktorym zaczyna sie tab
             //registerToMem(s.mem); po co przy deklaracji zapisywać w komorce jej adres				
         }
