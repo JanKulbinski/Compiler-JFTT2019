@@ -46,6 +46,7 @@ void number(string variable, int yylineno);
 void soloValue();
 void assign();
 void read();
+void add();
 
 //HELPERS
 void createIdentifier(Identifier *s, string name, long long int isLocal, long long int isArray, string type, long long int begin);
@@ -116,7 +117,7 @@ command:
 
 expression:
     value                                          { soloValue(); }
-    | value ADD value                              { cout << "add" << endl; }
+    | value ADD value                              {  }
     | value SUB value                              { cout << "sub" << endl; }
     | value MUL value                              { cout << "mul" << endl; }
     | value DIV value                              { cout << "div" << endl; }
@@ -185,21 +186,29 @@ void pushCommandOneArg(string str, long long int num) {
 }
 
 void setRegister(string number) {
-    long long int n = stoll(number);
-    string bin = decToBin(n);
+   long long int n = stoll(number);
+   string bin = decToBin(n);
 	long long int limit = bin.size();
-    zeroRegister();
-	for(long long int i = 0; i < limit; ++i){
-		if(bin[i] == '1'){
-			if(n > 0)
-			pushCommand("INC");
-			else
-			pushCommand("DEC");
-			/*registerValue++;*/
-		}
-		if(i < (limit - 1)){
+   zeroRegister();
+    
+   if(limit <= 4) {
+   	for(int i = 0; i < n; i++) {
+   		if(n < 0)
+         	pushCommand("DEC");
+         else
+         	pushCommand("INC");
+      }       
+   } else {
+		for(long long int i = 0; i < limit; ++i){
+			if(bin[i] == '1'){
+				if(n > 0)
+					pushCommand("INC");
+				else
+					pushCommand("DEC");
+			}
+			if(i < (limit - 1)){
 	        pushCommandOneArg("SHIFT", 2);
-	        /*registerValue *= 2;*/
+			}
 		}
 	}
 }
@@ -216,6 +225,8 @@ string decToBin(long long int n) {
     while(n!=0) {r=(n%2==0 ?"0":"1")+r; n/=2;}
     return r;
 }
+
+
 
 void read() {
 	pushCommand("GET");
