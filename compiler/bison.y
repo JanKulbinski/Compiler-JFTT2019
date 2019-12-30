@@ -44,6 +44,7 @@ void declareIdent(string variable, int yylineno);
 void declareArr(string variable, string begin, string end, int yylineno);
 void number(string variable, int yylineno);
 void soloValue();
+void assign();
 
 //HELPERS
 void createIdentifier(Identifier *s, string name, long long int isLocal, long long int isArray, string type, long long int begin);
@@ -51,6 +52,7 @@ void insertIdentifier(string key, Identifier i);
 void removeIdentifier(string key);
 void setUp();
 string decToBin(long long int n);
+void printCode(string outFileName);
 
 //MACHINE
 void registerToMem(long long int mem);
@@ -100,46 +102,7 @@ commands:
     ;
 
 command:
-    identifier ASSIGN  {
-    	assignFlag = 0;
-    }  expression SEM {
-   	 if(assignTarget.type == "ARR") {
-
-      	Identifier index = identifierStack.at(tabAssignTargetIndex);
-      		if(index.type == "NUM") {
-      			 if(stoi(index.name) < assignTarget.begin || stoi(index.name) >= assignTarget.begin + assignTarget.tableSize) {
-      			 	cout << "Błąd [okolice linii " << yylineno << \
-            		"]: Element z poza tablicy" << assignTarget.name<<"[" << stoi(index.name) << "]" << endl;
-      				exit(1);
-      			 }
-                long long int tabElMem = assignTarget.mem + (stoi(index.name) - assignTarget.begin);
-                registerToMem(tabElMem);
-                removeIdentifier(index.name);
-            }
-            else {
-             	 registerToMem(3);
-                setRegister(to_string(assignTarget.begin));
-                pushCommandOneArg("SUB", index.mem);
-                registerToMem(4);
-                setRegister(to_string(assignTarget.mem));
-                pushCommandOneArg("SUB", 4);
-                registerToMem(4);
-                memToRegister(3);
-                pushCommandOneArg("STOREI", 4);
-            }
-        }
-        else if(assignTarget.local == 0) {
-            registerToMem(assignTarget.mem);
-        }
-      	else {
-            cout << "Błąd [okolice linii " << yylineno << \
-            "]: Próba modyfikacji iteratora pętli." << endl;
-      		exit(1);
-      	}
-      	
-      identifierStack.at(assignTarget.name).initialized = 1;
-      assignFlag = 1;
-    }
+    identifier ASSIGN  { assignFlag = 0; }  expression SEM { assign(); }
     | IF condition THEN commands ELSE commands ENDIF { cout << "else" << endl; }  
     | IF condition THEN commands ENDIF { cout << "if" << endl; }            
     | WHILE condition DO commands ENDWHILE { cout << "while" << endl; }
@@ -147,10 +110,7 @@ command:
     | FOR IDENTIFIER FROM value TO value DO commands ENDFOR { cout << "for" << endl; }
     | FOR IDENTIFIER FROM value DOWNTO value DO commands ENDFOR { cout << "downfor" << endl; }
     | READ identifier SEM                         { cout << "read" << endl; }
-    | WRITE {
-      	writeFlag = 0;
-			assignFlag = 1;
-		} value SEM                                  { cout << "write" << endl; }
+    | WRITE { writeFlag = 1; assignFlag = 0; } value SEM { soloValue(); }
     ;
 
 expression:
@@ -256,10 +216,53 @@ string decToBin(long long int n) {
     return r;
 }
 
+void assign() {
+   	 if(assignTarget.type == "ARR") {
+
+      	Identifier index = identifierStack.at(tabAssignTargetIndex);
+      		if(index.type == "NUM") {
+      			 if(stoi(index.name) < assignTarget.begin || stoi(index.name) >= assignTarget.begin + assignTarget.tableSize) {
+      			 	cout << "Błąd [okolice linii " << yylineno << \
+            		"]: Element z poza tablicy" << assignTarget.name<<"[" << stoi(index.name) << "]" << endl;
+      				exit(1);
+      			 }
+                long long int tabElMem = assignTarget.mem + (stoi(index.name) - assignTarget.begin);
+                registerToMem(tabElMem);
+                removeIdentifier(index.name);
+            }
+            else {
+             	 registerToMem(3);
+                setRegister(to_string(assignTarget.begin));
+                pushCommandOneArg("SUB", index.mem);
+                registerToMem(4);
+                setRegister(to_string(assignTarget.mem));
+                pushCommandOneArg("SUB", 4);
+                registerToMem(4);
+                memToRegister(3);
+                pushCommandOneArg("STOREI", 4);
+            }
+        }
+        else if(assignTarget.local == 0) {
+            registerToMem(assignTarget.mem);
+        }
+      	else {
+            cout << "Błąd [okolice linii " << yylineno << \
+            "]: Próba modyfikacji iteratora pętli." << endl;
+      		exit(1);
+      	}
+      	
+      identifierStack.at(assignTarget.name).initialized = 1;
+      assignFlag = 1;
+}
 void soloValue() {
+	//cout<<"DEBUG"<<writeFlag<<endl;
+	//cout<<"DEBUG"<<expressionArguments[0]<<endl;
+  // cout<<"DEBUG"<<argumentsTabIndex[0]<<endl;
 	Identifier value = identifierStack.at(expressionArguments[0]);
+	
         if(value.type == "NUM") {
             setRegister(value.name);
+            
             removeIdentifier(value.name);
         }
         else if(value.type == "IDE") {
@@ -268,8 +271,9 @@ void soloValue() {
         else {
             Identifier index = identifierStack.at(argumentsTabIndex[0]);
             if(index.type == "NUM") {
-
-                long long int tabElMem = value.mem + (stoi(index.name) - assignTarget.begin);
+				cout<<"DEBUG"<<value.mem<<" "<<stoi(index.name)<<" "<<assignTarget.begin<<endl;
+                long long int tabElMem = value.mem + (stoi(index.name) - value.begin);
+                
                 memToRegister(tabElMem);
                 removeIdentifier(index.name);
             }
@@ -283,9 +287,12 @@ void soloValue() {
             }
         }
         
-   if (!writeFlag) {
-   	expressionArguments[0] = "-1";
-  		argumentsTabIndex[0] = "-1";
+   expressionArguments[0] = "-1";
+  	argumentsTabIndex[0] = "-1"; 
+   if (writeFlag) {
+   	 pushCommand("PUT");
+   	 assignFlag = 1;
+       writeFlag = 0;
    }
 }
 
@@ -503,7 +510,12 @@ void removeIdentifier(string key) {
     //cout << "Remove: " << key << endl;
 }
 
-
+void printCode(string outFileName) {
+   ofstream out_code(outFileName);
+	long long int i;
+	for(i = 0; i < codeStack.size(); i++)
+        out_code << codeStack.at(i) << endl;
+}
 
  void yyerror (const string str) {
    cout << "Line: " << yylineno <<". Error: " << str << endl;
@@ -523,7 +535,8 @@ int main(int argv, char* argc[]) {
     } else {
     setUp();
     yyparse();
-    //printToFile(argc[2]);
+    string file = argc[2];
+    printCode(file);
     cout << "\n#Compiled without errors \n" << endl;
     }
 	return 0;
