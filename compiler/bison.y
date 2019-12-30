@@ -32,9 +32,9 @@ int memCounter;
 int assignFlag;
 int writeFlag;
 Identifier assignTarget;
-string tabAssignTargetIndex = "-1";
-string expressionArguments[2] = {"-1", "-1"};
-string argumentsTabIndex[2] = {"-1", "-1"};
+string tabAssignTargetIndex = "null";
+string expressionArguments[2] = {"null", "null"};
+string argumentsTabIndex[2] = {"null", "null"};
 
 //BISON
 void ident(string variable, int yylineo);
@@ -293,8 +293,8 @@ void soloValue() {
             }
         }
         
-   expressionArguments[0] = "-1";
-  	argumentsTabIndex[0] = "-1"; 
+   expressionArguments[0] = "null";
+  	argumentsTabIndex[0] = "null"; 
    if (writeFlag) {
    	 pushCommand("PUT");
    	 assignFlag = 1;
@@ -312,7 +312,7 @@ void number(string variable, int yylineno) {
     Identifier s;
     createIdentifier(&s, variable, 0, 0, "NUM",0);
     insertIdentifier(variable, s);
-    if (expressionArguments[0] == "-1"){
+    if (expressionArguments[0] == "null"){
     	expressionArguments[0] = variable;
     } else {
     	expressionArguments[1] = variable;
@@ -370,7 +370,7 @@ void ident(string variable, int yylineo) {
                     "]: Próba użycia niezainicjalizowanej zmiennej " << variable << "." << endl;
                     exit(1);
                 }
-                if (expressionArguments[0] == "-1"){
+                if (expressionArguments[0] == "null"){
                     expressionArguments[0] = variable;
                 }
                 else{
@@ -417,7 +417,7 @@ void identIdent(string tab, string i, int yylineo) {
        if(!assignFlag) {
                 //TODO czy wywalać błąd niezainicjalizowanej
                 //zmiennej dla elementu tablicy-> raczej nie ma czasu ;/
-         if (expressionArguments[0] == "-1"){
+         if (expressionArguments[0] == "null"){
             	expressionArguments[0] = tab;
                argumentsTabIndex[0] = i;
          }
@@ -452,7 +452,7 @@ void identNum(string tab, string num, int yylineo) {
             if(!assignFlag){
                 //TODO czy wywalać błąd niezainicjalizowanej
                 //zmiennej dla elementu tablicy
-                if (expressionArguments[0] == "-1"){
+                if (expressionArguments[0] == "null"){
                     expressionArguments[0] = tab;
                     argumentsTabIndex[0] = num;
                 }
