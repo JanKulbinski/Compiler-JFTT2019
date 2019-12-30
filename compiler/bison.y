@@ -117,7 +117,7 @@ command:
 
 expression:
     value                                          { soloValue(); }
-    | value ADD value                              {  }
+    | value ADD value                              { add(); }
     | value SUB value                              { cout << "sub" << endl; }
     | value MUL value                              { cout << "mul" << endl; }
     | value DIV value                              { cout << "div" << endl; }
@@ -226,7 +226,88 @@ string decToBin(long long int n) {
     return r;
 }
 
-
+void add() {
+        
+  Identifier a = identifierStack.at(expressionArguments[0]);
+  Identifier b = identifierStack.at(expressionArguments[1]);     
+  
+  if(a.type != "ARR" && b.type != "ARR") {
+  	if(a.type == "NUM" && b.type == "NUM") {
+        long long int val = stoi(a.name) + stoi(b.name);
+        setRegister(to_string(val));
+        removeIdentifier(a.name);
+        removeIdentifier(b.name);
+    } else if(a.type == "NUM" && b.type == "IDE") {
+            setRegister(a.name);
+            pushCommandOneArg("ADD", b.mem);
+            removeIdentifier(a.name);
+    } else if(a.type == "IDE" && b.type == "NUM") {
+            setRegister(b.name);
+            pushCommandOneArg("ADD", a.mem);
+            removeIdentifier(b.name);
+    } else if(a.type == "IDE" && b.type == "IDE") {
+        if(a.name == b.name) {
+            memToRegister(a.mem);
+            pushCommand("SHL");
+        } else {
+           memToRegister(a.mem);
+           pushCommandOneArg("ADD", b.mem);
+        }
+   } 
+  } else {
+   Identifier aIndex, bIndex;
+   if(identifierStack.count(argumentsTabIndex[0]) > 0)		
+  		aIndex = identifierStack.at(argumentsTabIndex[0]);
+   if(identifierStack.count(argumentsTabIndex[1]) > 0)
+  		bIndex = identifierStack.at(argumentsTabIndex[1]);
+  	argumentsTabIndex[0] = "null";
+  	argumentsTabIndex[1] = "null";	
+  
+  if(a.type == "NUM" && b.type == "ARR") {
+        if(bIndex.type == "NUM") {
+            long long int addr = b.mem + (stoi(bIndex.name) - b.begin);
+            setRegister(to_string(addr));
+            pushCommandOneArg("LOADI", 0);
+            registerToMem(3);
+            setRegister(a.name);
+            pushCommandOneArg("ADD", 3);
+            removeIdentifier(a.name);
+            removeIdentifier(bIndex.name);
+            
+        } else if(bIndex.type == "IDE") { //tu tez nie
+            setRegister(to_string(b.mem - b.begin));
+            pushCommandOneArg("ADD", bIndex.mem);
+            pushCommandOneArg("LOADI", 0);
+            registerToMem(3);
+            setRegister(a.name);
+            pushCommandOneArg("ADD", 3);
+            removeIdentifier(a.name);
+        }
+    } else if(a.type == "ARR" && b.type == "NUM") {
+     		if(aIndex.type == "NUM") {
+            long long int addr = a.mem + (stoi(aIndex.name) - a.begin);
+            setRegister(to_string(addr));
+            pushCommandOneArg("LOADI", 0);
+            registerToMem(3);
+            setRegister(b.name);
+            pushCommandOneArg("ADD", 3);
+            removeIdentifier(b.name);
+            removeIdentifier(aIndex.name);
+            
+        } else if(aIndex.type == "IDE") { /// tu jest srednio
+            setRegister(to_string((a.mem - a.begin)));
+            pushCommandOneArg("ADD", aIndex.mem);
+            pushCommandOneArg("LOADI", 0);
+            registerToMem(3);
+            setRegister(b.name);
+            pushCommandOneArg("ADD", 3);
+            removeIdentifier(b.name);
+        }
+    }
+} 
+ expressionArguments[0] = "null";
+ expressionArguments[1] = "null";		
+}
 
 void read() {
 	pushCommand("GET");
@@ -248,15 +329,24 @@ void assign() {
                 removeIdentifier(index.name);
             }
             else {
-             	 registerToMem(3);
-                setRegister(to_string(assignTarget.begin));
+             	 /*registerToMem(3);
+                setRegister(to_string(assignTarget.begin)); //optymalizacja jak w dodawaniu
                 pushCommandOneArg("SUB", index.mem);
                 registerToMem(4);
-                setRegister(to_string(assignTarget.mem));
+                setRegister(to_string(assignTarget.mem)); //optymalizacja jak w dodawaniu połaczyc z tym u gory
                 pushCommandOneArg("SUB", 4);
                 registerToMem(4);
                 memToRegister(3);
-                pushCommandOneArg("STOREI", 4);
+                pushCommandOneArg("STOREI", 4);*/
+                
+                registerToMem(3);
+                
+                setRegister(to_string(assignTarget.mem - assignTarget.begin));
+            	 pushCommandOneArg("ADD", index.mem);
+            	 registerToMem(4);
+            	 memToRegister(3);
+            	 pushCommandOneArg("STOREI", 4);
+                
             }
         }
         else if(assignTarget.local == 0) {
@@ -295,12 +385,16 @@ void soloValue() {
                 removeIdentifier(index.name);
             }
             else {
-            	 setRegister(to_string(value.begin));
-                pushCommandOneArg("SUB", index.mem);
+            /*	 setRegister(to_string(value.begin)); //optymalizacja 
+                pushCommandOneArg("SUB", index.mem); // z tym
                 registerToMem(3);
                 setRegister(to_string(value.mem));
                 pushCommandOneArg("SUB", 3);
-                pushCommandOneArg("LOADI", 0);             
+                pushCommandOneArg("LOADI", 0); */
+                
+                setRegister(to_string(value.mem - value.begin));
+            	 pushCommandOneArg("ADD", index.mem);
+            	 pushCommandOneArg("LOADI", 0);            
             }
         }
         
