@@ -45,6 +45,7 @@ void declareArr(string variable, string begin, string end, int yylineno);
 void number(string variable, int yylineno);
 void soloValue();
 void assign();
+void read();
 
 //HELPERS
 void createIdentifier(Identifier *s, string name, long long int isLocal, long long int isArray, string type, long long int begin);
@@ -107,9 +108,9 @@ command:
     | IF condition THEN commands ENDIF { cout << "if" << endl; }            
     | WHILE condition DO commands ENDWHILE { cout << "while" << endl; }
     | DO condition WHILE commands ENDDO         { cout << "do" << endl; }
-    | FOR IDENTIFIER FROM value TO value DO commands ENDFOR { cout << "for" << endl; }
-    | FOR IDENTIFIER FROM value DOWNTO value DO commands ENDFOR { cout << "downfor" << endl; }
-    | READ identifier SEM                         { cout << "read" << endl; }
+    | FOR identifier FROM value TO value DO commands ENDFOR { cout << "for" << endl; }
+    | FOR identifier FROM value DOWNTO value DO commands ENDFOR { cout << "downfor" << endl; }
+    | READ  { assignFlag = 1; } identifier  SEM { read(); }
     | WRITE { writeFlag = 1; assignFlag = 0; } value SEM { soloValue(); }
     ;
 
@@ -214,6 +215,11 @@ string decToBin(long long int n) {
     string r;
     while(n!=0) {r=(n%2==0 ?"0":"1")+r; n/=2;}
     return r;
+}
+
+void read() {
+	pushCommand("GET");
+	assign();
 }
 
 void assign() {
