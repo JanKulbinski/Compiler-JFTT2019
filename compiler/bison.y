@@ -171,7 +171,6 @@ void registerToMem(long long int mem) {
 
 void memToRegister(long long int mem) {
 	pushCommandOneArg("LOAD", mem);
-	/*registerValue = -1;*/
 }
 
 void pushCommand(string str) {
@@ -192,7 +191,7 @@ void setRegister(string number) {
    zeroRegister();
     
    if(limit <= 4) {
-   	for(int i = 0; i < n; i++) {
+   	for(int i = 0; i < abs(n); i++) {
    		if(n < 0)
          	pushCommand("DEC");
          else
@@ -214,10 +213,7 @@ void setRegister(string number) {
 }
 
 void zeroRegister() {
-	/*if(registerValue != 0){*/
 		memToRegister(1);
-		/*registerValue = 0;*/
-	/*}*/
 }
 
 string decToBin(long long int n) {
@@ -274,7 +270,7 @@ void add() {
             removeIdentifier(a.name);
             removeIdentifier(bIndex.name);
             
-        } else if(bIndex.type == "IDE") { //tu tez nie
+        } else if(bIndex.type == "IDE") {
             setRegister(to_string(b.mem - b.begin));
             pushCommandOneArg("ADD", bIndex.mem);
             pushCommandOneArg("LOADI", 0);
@@ -294,7 +290,7 @@ void add() {
             removeIdentifier(b.name);
             removeIdentifier(aIndex.name);
             
-        } else if(aIndex.type == "IDE") { /// tu jest srednio
+        } else if(aIndex.type == "IDE") {
             setRegister(to_string((a.mem - a.begin)));
             pushCommandOneArg("ADD", aIndex.mem);
             pushCommandOneArg("LOADI", 0);
@@ -303,7 +299,82 @@ void add() {
             pushCommandOneArg("ADD", 3);
             removeIdentifier(b.name);
         }
-    }
+    } else if(a.type == "IDE" && b.type == "ARR") {
+        if(bIndex.type == "NUM") {
+        		long long int addr = b.mem + (stoi(bIndex.name) - b.begin);
+        		setRegister(to_string(addr));
+            pushCommandOneArg("LOADI", 0);
+            pushCommandOneArg("ADD", a.mem);
+            removeIdentifier(bIndex.name);
+        }
+        else if(bIndex.type == "IDE") {
+            setRegister(to_string(b.mem - b.begin));
+            pushCommandOneArg("ADD", bIndex.mem);
+            pushCommandOneArg("LOADI", 0);
+            pushCommandOneArg("ADD", a.mem);
+        }
+    } else if(a.type == "ARR" && b.type == "IDE") {
+        if(aIndex.type == "NUM") {
+        		long long int addr = a.mem + (stoi(aIndex.name) - a.begin);
+        		setRegister(to_string(addr));
+            pushCommandOneArg("LOADI", 0);
+            pushCommandOneArg("ADD", b.mem);
+            removeIdentifier(aIndex.name);
+        }
+        else if(aIndex.type == "IDE") {
+            setRegister(to_string(a.mem - a.begin));
+            pushCommandOneArg("ADD", aIndex.mem);
+            pushCommandOneArg("LOADI", 0);
+            
+            pushCommandOneArg("ADD", b.mem);
+        }
+    } else if(a.type == "ARR" && b.type == "ARR") {
+        if(aIndex.type == "NUM" && bIndex.type == "NUM") {
+            long long int addrA = a.mem + (stoi(aIndex.name) - a.begin);
+            long long int addrB = b.mem + (stoi(bIndex.name) - b.begin);
+            memToRegister(addrA);
+            if(a.name == b.name && addrA == addrB)
+                pushCommand("SHIFT 2");
+            else 
+                pushCommandOneArg("ADD", addrB);
+            removeIdentifier(aIndex.name);
+            removeIdentifier(bIndex.name);
+        }
+        else if(aIndex.type == "NUM" && bIndex.type == "IDE") {
+            long long int addrA = a.mem + (stoi(aIndex.name) - a.begin);  
+            setRegister(to_string((b.mem - b.begin)));
+            pushCommandOneArg("ADD", bIndex.mem);
+            pushCommandOneArg("LOADI", 0);
+            pushCommandOneArg("ADD", addrA);
+            removeIdentifier(aIndex.name);
+        }
+        else if(aIndex.type == "IDE" && bIndex.type == "NUM") {
+            long long int addrB = b.mem + (stoi(bIndex.name) - b.begin);  
+            setRegister(to_string((a.mem - a.begin)));
+            pushCommandOneArg("ADD", aIndex.mem);
+            pushCommandOneArg("LOADI", 0);
+            pushCommandOneArg("ADD", addrB);
+            removeIdentifier(bIndex.name);
+        }
+        else if(aIndex.type == "IDE" && bIndex.type == "IDE") {
+            if(a.name == b.name && aIndex.name == bIndex.name) {
+                setRegister(to_string((a.mem - a.begin)));
+            	 pushCommandOneArg("ADD", aIndex.mem);
+            	 pushCommandOneArg("LOADI", 0);
+                pushCommand("SHIFT 2");
+            }
+            else {
+            	 setRegister(to_string((a.mem - a.begin)));
+            	 pushCommandOneArg("ADD", aIndex.mem);
+            	 pushCommandOneArg("LOADI", 0);
+            	 registerToMem(3); 
+            	 setRegister(to_string((b.mem - b.begin)));
+            	 pushCommandOneArg("ADD", bIndex.mem);
+            	 pushCommandOneArg("LOADI", 0);
+            	 pushCommandOneArg("ADD", 3);
+            }
+        }
+   } 
 } 
  expressionArguments[0] = "null";
  expressionArguments[1] = "null";		
@@ -328,25 +399,13 @@ void assign() {
                 registerToMem(tabElMem);
                 removeIdentifier(index.name);
             }
-            else {
-             	 /*registerToMem(3);
-                setRegister(to_string(assignTarget.begin)); //optymalizacja jak w dodawaniu
-                pushCommandOneArg("SUB", index.mem);
-                registerToMem(4);
-                setRegister(to_string(assignTarget.mem)); //optymalizacja jak w dodawaniu połaczyc z tym u gory
-                pushCommandOneArg("SUB", 4);
-                registerToMem(4);
-                memToRegister(3);
-                pushCommandOneArg("STOREI", 4);*/
-                
-                registerToMem(3);
-                
+            else { 
+                registerToMem(3);  
                 setRegister(to_string(assignTarget.mem - assignTarget.begin));
             	 pushCommandOneArg("ADD", index.mem);
             	 registerToMem(4);
             	 memToRegister(3);
-            	 pushCommandOneArg("STOREI", 4);
-                
+            	 pushCommandOneArg("STOREI", 4); 
             }
         }
         else if(assignTarget.local == 0) {
@@ -362,9 +421,6 @@ void assign() {
       assignFlag = 1;
 }
 void soloValue() {
-	//cout<<"DEBUG"<<writeFlag<<endl;
-	//cout<<"DEBUG"<<expressionArguments[0]<<endl;
-  // cout<<"DEBUG"<<argumentsTabIndex[0]<<endl;
 	Identifier value = identifierStack.at(expressionArguments[0]);
 	
         if(value.type == "NUM") {
@@ -378,20 +434,12 @@ void soloValue() {
         else {
             Identifier index = identifierStack.at(argumentsTabIndex[0]);
             if(index.type == "NUM") {
-				cout<<"DEBUG"<<value.mem<<" "<<stoi(index.name)<<" "<<assignTarget.begin<<endl;
                 long long int tabElMem = value.mem + (stoi(index.name) - value.begin);
                 
                 memToRegister(tabElMem);
                 removeIdentifier(index.name);
             }
             else {
-            /*	 setRegister(to_string(value.begin)); //optymalizacja 
-                pushCommandOneArg("SUB", index.mem); // z tym
-                registerToMem(3);
-                setRegister(to_string(value.mem));
-                pushCommandOneArg("SUB", 3);
-                pushCommandOneArg("LOADI", 0); */
-                
                 setRegister(to_string(value.mem - value.begin));
             	 pushCommandOneArg("ADD", index.mem);
             	 pushCommandOneArg("LOADI", 0);            
@@ -455,7 +503,7 @@ void declareArr(string variable, string begin, string end, int yylineno) {
             createIdentifier(&s, variable, 0, size, "ARR", stoi(begin));
             insertIdentifier(variable, s);
             memCounter += size-1; // może size - 1, bo przy insertIdentifire dodawana jest juz 1
-            //setRegister(to_string(s.mem+1));	// do p0 wprowadz numer rejestru w ktorym zaczyna sie tab
+            //setRegister(to_string(s.mem+1));
             //registerToMem(s.mem); po co przy deklaracji zapisywać w komorce jej adres				
         }
 }
@@ -578,7 +626,7 @@ void insertIdentifier(string key, Identifier i) {
     if(identifierStack.count(key) == 0) {
         identifierStack.insert(make_pair(key, i));
         identifierStack.at(key).counter = 0;
-        memCounter++;	// czy potrzebne jest dodawanie 1 gdy dodaje sie tablice?
+        memCounter++;
     }
     else {
         identifierStack.at(key).counter = identifierStack.at(key).counter+1;
