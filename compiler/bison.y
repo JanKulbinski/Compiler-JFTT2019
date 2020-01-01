@@ -67,6 +67,7 @@ void setRegister(string number);
 void zeroRegister();
 void pushCommand(string str);
 void pushCommandOneArg(string str, long long int num);
+void setToRegister(Identifier a, Identifier aI);
 
 extern int yylex();
 extern int yylineno;
@@ -194,13 +195,19 @@ void pushCommandOneArg(string str, long long int num) {
     codeStack.push_back(temp);
 }
 
-int isPowerOf2() {
-	
+int isPowerOf2(string value) {
+	string bin = decToBin(stoi(value));
+	int length = bin.size();
+	if (bin[0] == '1' && bin.substr(1).find("1") == string::npos)
+    	return length;
+   else
+   	return 0;
 }
 
 void multiplication() {
-Identifier a = identifierStack.at(expressionArguments[0]);
+		  Identifier a = identifierStack.at(expressionArguments[0]);
         Identifier b = identifierStack.at(expressionArguments[1]);
+        
         Identifier aI, bI;
         if(identifierStack.count(argumentsTabIndex[0]) > 0)
             aI = identifierStack.at(argumentsTabIndex[0]);
@@ -208,11 +215,52 @@ Identifier a = identifierStack.at(expressionArguments[0]);
             bI = identifierStack.at(argumentsTabIndex[1]);
             
          if(a.type == "NUM" && b.type == "NUM") {
-            long long int val = stoll(a.name) * stoll(b.name);
+            long long int val = stoi(a.name) * stoi(b.name);
             setRegister(to_string(val));
             removeIdentifier(a.name);
             removeIdentifier(b.name);
-        }    
+            
+        } else if(a.type == "NUM" && isPowerOf2(a.name)) {
+        		setRegister(to_string(isPowerOf2(a.name) - 1));
+        		registerToMem(3);
+        		setToRegister(b, bI);
+     			
+     			if(stoi(a.name) < 0) {
+     				pushCommandOneArg("SHIFT", 3);
+     				pushCommandOneArg("SHIFT", 2);
+     				registerToMem(4);
+     				setToRegister(b,bI);
+     				pushCommandOneArg("SHIFT", 3);
+     				pushCommandOneArg("SUB", 4);
+     				
+     			} else if(stoi(a.name) > 0) {
+     				pushCommandOneArg("SHIFT", 3);
+     			} else {
+     				zeroRegister();
+     			}
+        		removeIdentifier(a.name);
+        		
+        } else if(b.type == "NUM" && isPowerOf2(b.name)) {
+        		setRegister(to_string(isPowerOf2(b.name) - 1));
+        		registerToMem(3);
+        		setToRegister(a, aI);
+     			
+     			if(stoi(b.name) < 0) {
+     				pushCommandOneArg("SHIFT", 3);
+     				pushCommandOneArg("SHIFT", 2);
+     				registerToMem(4);
+     				setToRegister(a,aI);
+     				pushCommandOneArg("SHIFT", 3);
+     				pushCommandOneArg("SUB", 4);
+     				
+     			} else if(stoi(b.name) > 0) {
+     				pushCommandOneArg("SHIFT", 3);
+     			} else {
+     				zeroRegister();
+     			}
+        		removeIdentifier(b.name);
+        		
+        } else {  
             /* Optimalization plans: change order a,b if a > b
              if(a.type != "ARR" && b.type != "ARR")
                 sub(b, a, 0, 0);
@@ -286,16 +334,30 @@ Identifier a = identifierStack.at(expressionArguments[0]);
             pushCommandOneArg("SUB", 3);
             pushCommandOneArg("JUMP", codeStack.size()+2);
 				memToRegister(7);
-				
-        argumentsTabIndex[0] = "null";
-        argumentsTabIndex[1] = "null";
-        expressionArguments[0] = "null";
-        expressionArguments[1] = "null";
+		}	
+    argumentsTabIndex[0] = "null";
+    argumentsTabIndex[1] = "null";
+    expressionArguments[0] = "null";
+    expressionArguments[1] = "null";
+}
+
+void setToRegister(Identifier a, Identifier aI) { 
+	if(a.type == "NUM") {
+   	setRegister(a.name);
+   } else if(a.type == "IDE") {
+      memToRegister(a.mem);
+   } else if(a.type == "ARR" && aI.type == "NUM") {
+        long long int addr = a.mem + (stoi(aI.name) - a.begin);
+        memToRegister(addr);
+   } else if(a.type == "ARR" && aI.type == "IDE") {
+            setRegister(to_string(a.mem - a.begin));
+            pushCommandOneArg("ADD", aI.mem);
+            pushCommandOneArg("LOADI", 0);
+    }
 }
 
 long long int setToTempMem(Identifier a, Identifier aI, long long int tempMem, int isJZERO, int isRemoval) {
     long long int mem = 0;
-    cout<<"in " << a.type;
     if(a.type == "NUM") {
         setRegister(a.name);
         if(isJZERO) {
@@ -335,7 +397,6 @@ long long int setToTempMem(Identifier a, Identifier aI, long long int tempMem, i
         }
         registerToMem(tempMem);
     }
-       cout<<"out";
     return mem;
 }
 
