@@ -131,15 +131,19 @@ commands:
 
 command:
     identifier ASSIGN  { assignFlag = 0; }  expression SEM { assign(); }
-    | IF { assignFlag = 0; depth++; } condition {assignFlag = 1;} THEN commands ifbody            
-    | WHILE { whileBegin(); } condition { assignFlag = 1; } DO commands ENDWHILE { whileDo(); }
-    | DO { whileBegin(); } condition { assignFlag = 1; } WHILE commands ENDDO { doWhile(); }
+    | IF { assignFlag = 0; depth++; } condition {assignFlag = 1;} THEN commands ifbody   
+    | while condition { assignFlag = 1; } DO commands ENDWHILE { whileDo(); }
+    | DO { 	assignFlag = 1; whileBegin(); } commands while condition ENDDO { doWhile(); }  
     | FOR identifier FROM value TO value DO commands ENDFOR { cout << "for" << endl; }
     | FOR identifier FROM value DOWNTO value DO commands ENDFOR { cout << "downfor" << endl; }
     | READ  { assignFlag = 1; } identifier  SEM { read(); }
     | WRITE { writeFlag = 1; assignFlag = 0; } value SEM { soloValue(); }
     ;
 
+while: 
+	WHILE { assignFlag = 0; whileBegin(); }
+	; 
+	
 ifbody:
 	ELSE { elseBlock(); } commands ENDIF { elseEndIfBlock(); }
 	| ENDIF { endIfBlock(); }
@@ -231,7 +235,6 @@ int isPowerOf2(string value) {
 }
 
 void whileBegin() {
-	assignFlag = 0;
 	depth++;
 	Jump j;
 	createJump(&j, codeStack.size(), depth);
@@ -239,6 +242,29 @@ void whileBegin() {
 }
 
 void doWhile() {
+ long long int stack;
+ long long int jumpCount = jumpStack.size()-1;
+ 
+ if(jumpCount >= 3 && jumpStack.at(jumpCount-3).depth == depth - 1) {
+      stack = jumpStack.at(jumpCount-3).placeInStack;
+      pushCommandOneArg("JUMP", stack);
+      
+      addInt(jumpStack.at(jumpCount).placeInStack, codeStack.size());
+      addInt(jumpStack.at(jumpCount-1).placeInStack, codeStack.size());
+      jumpStack.pop_back();
+      
+ } else {
+    stack = jumpStack.at(jumpCount-2).placeInStack;
+    pushCommandOneArg("JUMP", stack);
+    
+    addInt(jumpStack.at(jumpCount).placeInStack, codeStack.size());
+ }
+ jumpStack.pop_back();
+ jumpStack.pop_back();
+ jumpStack.pop_back();
+ depth--;
+ depth--;
+ assignFlag = 1;
 
 }
 
@@ -249,12 +275,14 @@ void whileDo() {
  if(jumpCount >= 2 && jumpStack.at(jumpCount-2).depth == depth) {
       stack = jumpStack.at(jumpCount-2).placeInStack;
       pushCommandOneArg("JUMP", stack);
+      
       addInt(jumpStack.at(jumpCount).placeInStack, codeStack.size());
       addInt(jumpStack.at(jumpCount-1).placeInStack, codeStack.size());
       jumpStack.pop_back();
  } else {
     stack = jumpStack.at(jumpCount-1).placeInStack;
     pushCommandOneArg("JUMP", stack);
+    
     addInt(jumpStack.at(jumpCount).placeInStack, codeStack.size());
  }
  jumpStack.pop_back();
