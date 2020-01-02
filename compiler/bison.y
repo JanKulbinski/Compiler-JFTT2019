@@ -24,13 +24,20 @@ typedef struct {
   	long long int tableSize;
 } Identifier;
 
+typedef struct {
+    long long int placeInStack;
+    long long int depth;
+} Jump;
+
 vector<string> codeStack;
+vector<Jump> jumpStack;
 map<string, Identifier> identifierStack;
 
 
-int memCounter;
 int assignFlag;
 int writeFlag;
+long long int memCounter;
+long long int depth;
 Identifier assignTarget;
 string tabAssignTargetIndex = "null";
 string expressionArguments[2] = {"null", "null"};
@@ -49,6 +56,15 @@ void read();
 void add();
 void subtract();
 void multiplication();
+void elseBlock();
+void elseEndIfBlock();
+void endIfBlock();
+void ifEqual();
+void ifNotEqual();
+void ifLess(); 
+void ifGreater(); 
+void ifLessEqual(); 
+void ifGreaterEqual();
 
 //HELPERS
 void createIdentifier(Identifier *s, string name, long long int isLocal, long long int isArray, string type, long long int begin);
@@ -59,6 +75,7 @@ string decToBin(long long int n);
 void printCode(string outFileName);
 long long int setToTempMem(Identifier a, Identifier aI, long long int tempMem, int isJZERO, int isRemoval);
 int isPowerOf2();
+void createJump(Jump *j, long long int stack, long long int depth);
 
 //MACHINE
 void registerToMem(long long int mem);
@@ -68,6 +85,7 @@ void zeroRegister();
 void pushCommand(string str);
 void pushCommandOneArg(string str, long long int num);
 void setToRegister(Identifier a, Identifier aI);
+void addInt(long long int command, long long int val);
 
 extern int yylex();
 extern int yylineno;
@@ -110,8 +128,7 @@ commands:
 
 command:
     identifier ASSIGN  { assignFlag = 0; }  expression SEM { assign(); }
-    | IF condition THEN commands ELSE commands ENDIF { cout << "else" << endl; }  
-    | IF condition THEN commands ENDIF { cout << "if" << endl; }            
+    | IF { assignFlag = 0; depth++; } condition {assignFlag = 1;} THEN commands ifbody            
     | WHILE condition DO commands ENDWHILE { cout << "while" << endl; }
     | DO condition WHILE commands ENDDO         { cout << "do" << endl; }
     | FOR identifier FROM value TO value DO commands ENDFOR { cout << "for" << endl; }
@@ -119,6 +136,11 @@ command:
     | READ  { assignFlag = 1; } identifier  SEM { read(); }
     | WRITE { writeFlag = 1; assignFlag = 0; } value SEM { soloValue(); }
     ;
+
+ifbody:
+	ELSE { elseBlock(); } commands ENDIF { elseEndIfBlock(); }
+	| ENDIF { endIfBlock(); }
+	;
 
 expression:
     value                                          { soloValue(); }
@@ -130,23 +152,23 @@ expression:
     ;
 
 condition:
-    value EQ value                                 { cout << "=" << endl; }
-    | value NEQ value                               { cout << "!=" << endl; }
-    | value LE value                                { cout << "<" << endl; }
-    | value GE value                                { cout << ">" << endl; }
-    | value LEQ value                               { cout << "<=" << endl; }
-    | value GEQ value                               { cout << ">=" << endl; }
+    value EQ value                                 { ifEqual(); }
+    | value NEQ value                              { ifNotEqual(); }
+    | value LE value                               { ifLess(); }
+    | value GE value                               { ifGreater(); }
+    | value LEQ value                              { ifLessEqual(); }
+    | value GEQ value                              { ifGreaterEqual(); }
     ;
 
 value:
-    NUM                                         { number($1, yylineno); }
+    NUM                                            { number($1, yylineno); }
     | identifier
     ;
 
 identifier:
     IDENTIFIER                                     { ident($1, yylineno); }
-    | IDENTIFIER LB IDENTIFIER RB               { identIdent($1,$3, yylineno); }
-    | IDENTIFIER LB NUM RB                   { identNum($1,$3, yylineno); }
+    | IDENTIFIER LB IDENTIFIER RB               	{ identIdent($1,$3, yylineno); }
+    | IDENTIFIER LB NUM RB                   		{ identNum($1,$3, yylineno); }
     ;
 
 %%
@@ -157,6 +179,7 @@ void setUp() {
     	writeFlag = 0;
 		assignFlag = 1;
 		memCounter = 10;
+		depth = 0;
 		
 		//create 0
 	//	pushCommand("# 0 to p1");
@@ -202,6 +225,113 @@ int isPowerOf2(string value) {
     	return length;
    else
    	return 0;
+}
+
+void elseBlock() {
+   Jump j;
+   createJump(&j, codeStack.size(), depth);
+   jumpStack.push_back(j);
+   pushCommand("JUMP");
+        
+   long long int jumpCount = jumpStack.size()-2;
+   Jump jump = jumpStack.at(jumpCount);
+   addInt(jump.placeInStack, codeStack.size());
+   jumpCount--;
+   if(jumpCount >= 0 && jumpStack.at(jumpCount).depth == depth) {
+   	addInt(jumpStack.at(jumpCount).placeInStack, codeStack.size());
+   }
+   assignFlag = 1;
+}
+
+void elseEndIfBlock() {
+   addInt(jumpStack.at(jumpStack.size()-1).placeInStack, codeStack.size());
+   jumpStack.pop_back();
+   jumpStack.pop_back();
+   if(jumpStack.size() >= 1 && jumpStack.at(jumpStack.size()-1).depth == depth) {
+   	jumpStack.pop_back();
+   }
+   depth--;
+   assignFlag = 1;
+}
+        
+void endIfBlock() {
+   long long int jumpCount = jumpStack.size()-1;
+   addInt(jumpStack.at(jumpCount).placeInStack, codeStack.size());
+   jumpCount--;
+   if(jumpCount >= 0 && jumpStack.at(jumpCount).depth == depth) {
+   	addInt(jumpStack.at(jumpCount).placeInStack, codeStack.size());
+      jumpStack.pop_back();
+   }
+   jumpStack.pop_back();
+   depth--;
+   assignFlag = 1;
+}
+
+
+void ifEqual() {
+	subtract();
+	
+	Jump jump;
+   createJump(&jump, codeStack.size(), depth);
+   jumpStack.push_back(jump);
+   pushCommand("JPOS");
+   Jump jump2;
+   createJump(&jump, codeStack.size(), depth);
+   jumpStack.push_back(jump);
+   pushCommand("JNEG");
+}
+
+void ifNotEqual() {
+	subtract();
+	
+	Jump jump;
+   createJump(&jump, codeStack.size(), depth);
+   jumpStack.push_back(jump);
+   pushCommand("JZERO");
+}
+
+void ifLess() {
+	subtract();
+	
+	Jump jump;
+   createJump(&jump, codeStack.size(), depth);
+   jumpStack.push_back(jump);
+   pushCommand("JZERO");
+   Jump jump2;
+   createJump(&jump, codeStack.size(), depth);
+   jumpStack.push_back(jump);
+   pushCommand("JPOS");
+}
+
+void ifGreater() {
+	subtract();
+	
+	Jump jump;
+   createJump(&jump, codeStack.size(), depth);
+   jumpStack.push_back(jump);
+   pushCommand("JZERO");
+   Jump jump2;
+   createJump(&jump, codeStack.size(), depth);
+   jumpStack.push_back(jump);
+   pushCommand("JNEG");
+}
+
+void ifLessEqual() {
+	subtract();
+
+	Jump jump;
+   createJump(&jump, codeStack.size(), depth);
+   jumpStack.push_back(jump);
+   pushCommand("JPOS");
+}
+
+void ifGreaterEqual() {
+	subtract();
+	
+	Jump jump;
+   createJump(&jump, codeStack.size(), depth);
+   jumpStack.push_back(jump);
+   pushCommand("JNEG");
 }
 
 void multiplication() {
@@ -1027,6 +1157,15 @@ void removeIdentifier(string key) {
         }
     }
     //cout << "Remove: " << key << endl;
+}
+
+void createJump(Jump *j, long long int stack, long long int depth) {
+    j->placeInStack = stack;
+    j->depth = depth;
+}
+
+void addInt(long long int command, long long int val) {
+    codeStack.at(command) = codeStack.at(command) + " " + to_string(val);
 }
 
 void printCode(string outFileName) {
