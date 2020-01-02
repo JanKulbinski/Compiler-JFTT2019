@@ -65,6 +65,9 @@ void ifLess();
 void ifGreater(); 
 void ifLessEqual(); 
 void ifGreaterEqual();
+void whileDo();
+void whileBegin();
+void doWhile();
 
 //HELPERS
 void createIdentifier(Identifier *s, string name, long long int isLocal, long long int isArray, string type, long long int begin);
@@ -129,8 +132,8 @@ commands:
 command:
     identifier ASSIGN  { assignFlag = 0; }  expression SEM { assign(); }
     | IF { assignFlag = 0; depth++; } condition {assignFlag = 1;} THEN commands ifbody            
-    | WHILE condition DO commands ENDWHILE { cout << "while" << endl; }
-    | DO condition WHILE commands ENDDO         { cout << "do" << endl; }
+    | WHILE { whileBegin(); } condition { assignFlag = 1; } DO commands ENDWHILE { whileDo(); }
+    | DO { whileBegin(); } condition { assignFlag = 1; } WHILE commands ENDDO { doWhile(); }
     | FOR identifier FROM value TO value DO commands ENDFOR { cout << "for" << endl; }
     | FOR identifier FROM value DOWNTO value DO commands ENDFOR { cout << "downfor" << endl; }
     | READ  { assignFlag = 1; } identifier  SEM { read(); }
@@ -225,6 +228,39 @@ int isPowerOf2(string value) {
     	return length;
    else
    	return 0;
+}
+
+void whileBegin() {
+	assignFlag = 0;
+	depth++;
+	Jump j;
+	createJump(&j, codeStack.size(), depth);
+	jumpStack.push_back(j);
+}
+
+void doWhile() {
+
+}
+
+void whileDo() {
+ long long int stack;
+ long long int jumpCount = jumpStack.size()-1;
+ 
+ if(jumpCount >= 2 && jumpStack.at(jumpCount-2).depth == depth) {
+      stack = jumpStack.at(jumpCount-2).placeInStack;
+      pushCommandOneArg("JUMP", stack);
+      addInt(jumpStack.at(jumpCount).placeInStack, codeStack.size());
+      addInt(jumpStack.at(jumpCount-1).placeInStack, codeStack.size());
+      jumpStack.pop_back();
+ } else {
+    stack = jumpStack.at(jumpCount-1).placeInStack;
+    pushCommandOneArg("JUMP", stack);
+    addInt(jumpStack.at(jumpCount).placeInStack, codeStack.size());
+ }
+ jumpStack.pop_back();
+ jumpStack.pop_back();
+ depth--;
+ assignFlag = 1;
 }
 
 void elseBlock() {
