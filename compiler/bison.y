@@ -31,8 +31,8 @@ typedef struct {
 
 vector<string> codeStack;
 vector<Jump> jumpStack;
+vector<string> forStack;
 map<string, Identifier> identifierStack;
-
 
 int assignFlag;
 int writeFlag;
@@ -68,6 +68,11 @@ void ifGreaterEqual();
 void whileDo();
 void whileBegin();
 void doWhile();
+void forBegin(string variable, int yylineno);
+void forTo();
+void forDownTo();
+void forEnd();
+void subtractIdentifires(string a, string b);
 
 //HELPERS
 void createIdentifier(Identifier *s, string name, long long int isLocal, long long int isArray, string type, long long int begin);
@@ -134,21 +139,25 @@ command:
     | IF { assignFlag = 0; depth++; } condition {assignFlag = 1;} THEN commands ifbody   
     | while condition { assignFlag = 1; } DO commands ENDWHILE { whileDo(); }
     | DO { 	assignFlag = 1; whileBegin(); } commands while condition ENDDO { doWhile(); }  
-    | FOR identifier FROM value TO value DO commands ENDFOR { cout << "for" << endl; }
-    | FOR identifier FROM value DOWNTO value DO commands ENDFOR { cout << "downfor" << endl; }
+    | FOR IDENTIFIER { forBegin($2, yylineno); } FROM value forbody
     | READ  { assignFlag = 1; } identifier  SEM { read(); }
     | WRITE { writeFlag = 1; assignFlag = 0; } value SEM { soloValue(); }
     ;
 
-while: 
-	WHILE { assignFlag = 0; whileBegin(); }
-	; 
-	
 ifbody:
 	ELSE { elseBlock(); } commands ENDIF { elseEndIfBlock(); }
 	| ENDIF { endIfBlock(); }
 	;
 
+while: 
+	WHILE { assignFlag = 0; whileBegin(); }
+	; 
+
+forbody:
+	TO value DO { forTo(); } commands ENDFOR { forEnd(); }
+	| DOWNTO value DO { forDownTo(); } commands ENDFOR { forEnd(); }
+	;
+	
 expression:
     value                                          { soloValue(); }
     | value ADD value                              { add(); }
@@ -183,9 +192,10 @@ identifier:
 
 void setUp() {
 
+		forFlag = 0;
     	writeFlag = 0;
 		assignFlag = 1;
-		memCounter = 10;
+		memCounter = 11;
 		depth = 0;
 		
 		//create 0
@@ -232,6 +242,165 @@ int isPowerOf2(string value) {
     	return length;
    else
    	return 0;
+}
+
+void forBegin(string variable, int yylineno) {
+	
+	if (identifierStack.find(variable) != identifierStack.end()) {
+   	cout << "Błąd [okolice linii " << yylineno \
+   	<< "]: Kolejna deklaracja zmiennej " << variable << "." << endl;
+   	exit(1);
+   } else {
+     	Identifier s;
+      createIdentifier(&s, variable, 1, 0, "IDE", 0);
+      s.initialized = 1;
+      insertIdentifier(variable, s);
+      forStack.push_back(variable);
+   }
+  
+   forFlag = 1;
+   assignFlag = 0;
+   assignTarget = identifierStack.at(variable);
+   depth++;
+}
+
+void forTo() {
+
+	Identifier a = identifierStack.at(expressionArguments[0]);
+	if(a.type == "NUM") {
+   	setRegister(a.name);
+   } else if(a.type == "IDE") {
+      memToRegister(a.mem);
+   } else {
+      Identifier index = identifierStack.at(argumentsTabIndex[0]);
+      if(index.type == "NUM") {
+      	long long int tabElMem = a.mem + (stoi(index.name) - a.begin);
+         memToRegister(tabElMem);
+      } else {
+         setRegister(to_string(a.mem - a.begin));
+         pushCommandOneArg("ADD", index.mem);
+         pushCommandOneArg("LOADI", 0);            
+        }
+   }
+   pushCommand("DEC");
+   registerToMem(assignTarget.mem);
+   assignTarget.initialized = 1;
+   
+   
+   Identifier b = identifierStack.at(expressionArguments[1]);
+	if(b.type == "NUM") {
+   	setRegister(b.name);
+   } else if(b.type == "IDE") {
+      memToRegister(b.mem);
+   } else {
+      Identifier index = identifierStack.at(argumentsTabIndex[1]);
+      if(index.type == "NUM") {
+      	long long int tabElMem = b.mem + (stoi(index.name) - b.begin);
+         memToRegister(tabElMem);
+      } else {
+         setRegister(to_string(b.mem - b.begin));
+         pushCommandOneArg("ADD", index.mem);
+         pushCommandOneArg("LOADI", 0);            
+        }
+   }
+   
+   Identifier s;
+   createIdentifier(&s, "L"+depth, 0, 0, "IDE", 0);
+   insertIdentifier("L"+depth, s);
+  	s.initialized = 1;
+   registerToMem(s.mem);
+
+   Jump j;
+	createJump(&j, codeStack.size(), depth);
+	jumpStack.push_back(j);
+	memToRegister(assignTarget.mem);
+	pushCommand("INC");
+	registerToMem(assignTarget.mem);
+   subtractIdentifires(assignTarget.name,"L"+depth);
+   
+   Jump jump;
+   createJump(&jump, codeStack.size(), depth);
+   jumpStack.push_back(jump);
+   pushCommand("JPOS");
+	assignFlag = 1;
+}
+
+void forDownTo() {
+
+	Identifier a = identifierStack.at(expressionArguments[0]);
+	if(a.type == "NUM") {
+   	setRegister(a.name);
+   } else if(a.type == "IDE") {
+      memToRegister(a.mem);
+   } else {
+      Identifier index = identifierStack.at(argumentsTabIndex[0]);
+      if(index.type == "NUM") {
+      	long long int tabElMem = a.mem + (stoi(index.name) - a.begin);
+         memToRegister(tabElMem);
+      } else {
+         setRegister(to_string(a.mem - a.begin));
+         pushCommandOneArg("ADD", index.mem);
+         pushCommandOneArg("LOADI", 0);            
+        }
+   }
+   pushCommand("INC");
+   registerToMem(assignTarget.mem);
+   assignTarget.initialized = 1;
+   
+   
+   Identifier b = identifierStack.at(expressionArguments[1]);
+	if(b.type == "NUM") {
+   	setRegister(b.name);
+   } else if(b.type == "IDE") {
+      memToRegister(b.mem);
+   } else {
+      Identifier index = identifierStack.at(argumentsTabIndex[1]);
+      if(index.type == "NUM") {
+      	long long int tabElMem = b.mem + (stoi(index.name) - b.begin);
+         memToRegister(tabElMem);
+      } else {
+         setRegister(to_string(b.mem - b.begin));
+         pushCommandOneArg("ADD", index.mem);
+         pushCommandOneArg("LOADI", 0);            
+        }
+   }
+   
+   Identifier s;
+   createIdentifier(&s, "L"+depth, 0, 0, "IDE", 0);
+   insertIdentifier("L"+depth, s);
+  	s.initialized = 1;
+   registerToMem(s.mem);
+
+   Jump j;
+	createJump(&j, codeStack.size(), depth);
+	jumpStack.push_back(j);
+	memToRegister(assignTarget.mem);
+	pushCommand("DEC");
+	registerToMem(assignTarget.mem);
+   subtractIdentifires(assignTarget.name,"L"+depth);
+   
+   Jump jump;
+   createJump(&jump, codeStack.size(), depth);
+   jumpStack.push_back(jump);
+   pushCommand("JNEG");
+	assignFlag = 1;
+}
+
+void forEnd() {
+
+	long long int stack;
+	long long int jumpCount = jumpStack.size()-1;
+	
+	stack = jumpStack.at(jumpCount-1).placeInStack;
+   pushCommandOneArg("JUMP", stack);
+   addInt(jumpStack.at(jumpCount).placeInStack, codeStack.size());
+	jumpStack.pop_back();
+	jumpStack.pop_back();
+
+ 	removeIdentifier("L"+depth);
+ 	removeIdentifier(forStack.back());
+ 	forStack.pop_back();
+  	depth--;
 }
 
 void whileBegin() {
@@ -334,7 +503,7 @@ void endIfBlock() {
 
 void ifEqual() {
 	subtract();
-	
+	  	
 	Jump jump;
    createJump(&jump, codeStack.size(), depth);
    jumpStack.push_back(jump);
@@ -633,12 +802,18 @@ string decToBin(long long int n) {
     return r;
 }
 
-void subtract() {       
+void subtractIdentifires(string a, string b) {
+	expressionArguments[0] = a;
+	expressionArguments[1] = b;
+	subtract();
+}
+
+void subtract() {
   Identifier a = identifierStack.at(expressionArguments[0]);
-  Identifier b = identifierStack.at(expressionArguments[1]);     
+  Identifier b = identifierStack.at(expressionArguments[1]); 
+    cout << a.mem << " " << b.mem;
   expressionArguments[0] = "null";
   expressionArguments[1] = "null";
-  
   if(a.type != "ARR" && b.type != "ARR") {
   	if(a.type == "NUM" && b.type == "NUM") {
         long long int val = stoi(a.name) - stoi(b.name);
@@ -809,7 +984,7 @@ void add() {
     } else if(a.type == "IDE" && b.type == "IDE") {
         if(a.name == b.name) {
             memToRegister(a.mem);
-            pushCommand("SHL");
+            pushCommand("SHIFT 2");
         } else {
            memToRegister(a.mem);
            pushCommandOneArg("ADD", b.mem);
@@ -967,13 +1142,14 @@ void assign() {
         }
       	else {
             cout << "Błąd [okolice linii " << yylineno << \
-            "]: Próba modyfikacji iteratora pętli." << endl;
+            "]: Próba modyfikacji iteratora pętli." << assignTarget.local << assignTarget.name << endl;
       		exit(1);
       	}
       	
       identifierStack.at(assignTarget.name).initialized = 1;
       assignFlag = 1;
 }
+
 void soloValue() {
 	Identifier value = identifierStack.at(expressionArguments[0]);
 	
@@ -999,7 +1175,6 @@ void soloValue() {
             	 pushCommandOneArg("LOADI", 0);            
             }
         }
-        
    expressionArguments[0] = "null";
   	argumentsTabIndex[0] = "null"; 
    if (writeFlag) {
@@ -1007,6 +1182,7 @@ void soloValue() {
    	 assignFlag = 1;
        writeFlag = 0;
    }
+   	
 }
 
 void number(string variable, int yylineno) {
@@ -1015,7 +1191,6 @@ void number(string variable, int yylineno) {
    	  "]: Próba przypisania do stałej." << endl;
            	exit(1);
     }
-    
     Identifier s;
     createIdentifier(&s, variable, 0, 0, "NUM",0);
     insertIdentifier(variable, s);
@@ -1056,9 +1231,7 @@ void declareArr(string variable, string begin, string end, int yylineno) {
             Identifier s;
             createIdentifier(&s, variable, 0, size, "ARR", stoi(begin));
             insertIdentifier(variable, s);
-            memCounter += size-1; // może size - 1, bo przy insertIdentifire dodawana jest juz 1
-            //setRegister(to_string(s.mem+1));
-            //registerToMem(s.mem); po co przy deklaracji zapisywać w komorce jej adres				
+            memCounter += size-1;			
         }
 }
 
@@ -1185,7 +1358,6 @@ void insertIdentifier(string key, Identifier i) {
     else {
         identifierStack.at(key).counter = identifierStack.at(key).counter+1;
     }
-    /*cout << "Add: " << key << " " << memCounter-1 << endl;*/
 }
 
 void createIdentifier(Identifier *s, string name, long long int isLocal,
@@ -1220,7 +1392,6 @@ void removeIdentifier(string key) {
             memCounter--;
         }
     }
-    //cout << "Remove: " << key << endl;
 }
 
 void createJump(Jump *j, long long int stack, long long int depth) {
@@ -1240,7 +1411,7 @@ void printCode(string outFileName) {
 }
 
  void yyerror (const string str) {
-   cout << "Line: " << yylineno <<". Error: " << str << endl;
+   cout << "Line: " << yylineno <<". Error: Unrecognized symbol"<< endl;
    exit(1);
   }
  
