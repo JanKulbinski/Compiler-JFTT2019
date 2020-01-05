@@ -73,6 +73,7 @@ void forTo();
 void forDownTo();
 void forEnd();
 void subtractIdentifires(string a, string b);
+void divide();
 
 //HELPERS
 void createIdentifier(Identifier *s, string name, long long int isLocal, long long int isArray, string type, long long int begin);
@@ -163,7 +164,7 @@ expression:
     | value ADD value                              { add(); }
     | value SUB value                              { subtract(); }
     | value MUL value                              { multiplication(); }
-    | value DIV value                              { cout << "div" << endl; }
+    | value DIV value                              { divide(); }
     | value MOD value                              { cout << "mod" << endl; }
     ;
 
@@ -192,10 +193,9 @@ identifier:
 
 void setUp() {
 
-		forFlag = 0;
     	writeFlag = 0;
 		assignFlag = 1;
-		memCounter = 11;
+		memCounter = 12;
 		depth = 0;
 		
 		//create 0
@@ -258,7 +258,6 @@ void forBegin(string variable, int yylineno) {
       forStack.push_back(variable);
    }
   
-   forFlag = 1;
    assignFlag = 0;
    assignTarget = identifierStack.at(variable);
    depth++;
@@ -698,6 +697,162 @@ void multiplication() {
             pushCommandOneArg("JUMP", codeStack.size()+2);
 				memToRegister(7);
 		}	
+    argumentsTabIndex[0] = "null";
+    argumentsTabIndex[1] = "null";
+    expressionArguments[0] = "null";
+    expressionArguments[1] = "null";
+}
+
+void divide() {
+		  Identifier a = identifierStack.at(expressionArguments[0]);
+        Identifier b = identifierStack.at(expressionArguments[1]);
+        
+        Identifier aI, bI;
+        if(identifierStack.count(argumentsTabIndex[0]) > 0)
+            aI = identifierStack.at(argumentsTabIndex[0]);
+        if(identifierStack.count(argumentsTabIndex[1]) > 0)
+            bI = identifierStack.at(argumentsTabIndex[1]);
+        
+        if(a.type == "NUM" && stoll(a.name) == 0) {
+            zeroRegister();
+        } else if(b.type == "NUM" && stoll(b.name) == 0) {
+            zeroRegister();
+        } else if(a.type == "NUM" && b.type == "NUM") {
+            long long int val = stoi(a.name) / stoi(b.name);
+            setRegister(to_string(val));
+            removeIdentifier(a.name);
+            removeIdentifier(b.name);
+            
+        } else if(b.type == "NUM" && isPowerOf2(b.name)) {
+        		setRegister(to_string(1-isPowerOf2(b.name)));
+        		registerToMem(3);
+        		setToRegister(a, aI);
+     			
+     			if(stoi(b.name) < 0) {
+     				pushCommandOneArg("SHIFT", 3);
+     				pushCommandOneArg("SHIFT", 2);
+     				registerToMem(4);
+     				setToRegister(a,aI);
+     				pushCommandOneArg("SHIFT", 3);
+     				pushCommandOneArg("SUB", 4);
+     				
+     			} else if(stoi(b.name) > 0) {
+     				pushCommandOneArg("SHIFT", 3);
+     			} else {
+     				zeroRegister();
+     			}
+        		removeIdentifier(b.name);
+        		
+        } else {     
+				zeroRegister();
+				registerToMem(7);
+				registerToMem(4);
+				pushCommand("DEC");
+				registerToMem(8);
+            setToTempMem(a, aI, 5, 0, 1);
+            setToTempMem(b, bI, 6, 0, 1);
+            
+				//if (b < 0) b = -b         	
+            pushCommandOneArg("JPOS", codeStack.size()+8);
+            pushCommandOneArg("SHIFT", 2);
+            registerToMem(3);
+            memToRegister(6);
+            pushCommandOneArg("SUB", 3);
+            registerToMem(6); 
+           	zeroRegister();
+           	registerToMem(8);
+           	
+           	//if (a < 0) a = -a
+            memToRegister(5);
+            pushCommandOneArg("JPOS", codeStack.size()+10);
+            pushCommandOneArg("SHIFT", 2);
+            registerToMem(3);
+            memToRegister(5);
+            pushCommandOneArg("SUB", 3);
+            registerToMem(5);
+            memToRegister(8);
+            pushCommand("INC");
+            registerToMem(8);
+            memToRegister(5);
+            
+            
+				// if(|a| < |b|) return 0
+            pushCommandOneArg("SUB", 6);
+            pushCommandOneArg("JPOS", codeStack.size()+4);
+            pushCommandOneArg("JZERO", codeStack.size()+3);
+            zeroRegister();
+            pushCommandOneArg("JUMP", codeStack.size()+55); 
+				
+				//R = a
+				memToRegister(5);
+				registerToMem(10);		
+				registerToMem(11);
+				
+				//compute n = #bits of a
+				memToRegister(11);
+				pushCommandOneArg("SHIFT", 9);
+				pushCommandOneArg("JZERO", codeStack.size()+6);
+				registerToMem(11);
+				memToRegister(4);
+				pushCommand("INC");
+				registerToMem(4);
+				pushCommandOneArg("JUMP", codeStack.size()-7); 
+				
+				//b = b << n
+				memToRegister(4);
+				pushCommand("INC");
+				registerToMem(4);
+				memToRegister(6);
+				pushCommandOneArg("SHIFT", 4);
+				registerToMem(11);
+				memToRegister(4);
+				pushCommand("DEC");
+				
+				
+				// for n-1 .. 0
+				int stackJ1 = codeStack.size();
+				pushCommandOneArg("JNEG",  codeStack.size() + 23); 
+				registerToMem(4);
+
+				// R = R*2 - D
+				memToRegister(10);
+				pushCommandOneArg("SHIFT", 2);
+				pushCommandOneArg("SUB", 11);
+				registerToMem(10);
+            
+            // if R >= 0
+            pushCommandOneArg("JNEG", codeStack.size() + 8); 
+            memToRegister(7);
+            pushCommandOneArg("SHIFT", 2);
+            pushCommand("INC");
+            registerToMem(7);
+            memToRegister(4);
+				pushCommand("DEC");
+            pushCommandOneArg("JUMP", stackJ1);
+            
+            memToRegister(10);
+            pushCommandOneArg("ADD", 11);
+            registerToMem(10);
+            memToRegister(7);
+            pushCommandOneArg("SHIFT", 2);
+            registerToMem(7);
+            memToRegister(4);
+				pushCommand("DEC");
+            pushCommandOneArg("JUMP", stackJ1);
+
+            //if(a.old * b.old < 0) c = -c 
+				memToRegister(8);
+            pushCommandOneArg("JNEG", codeStack.size()+8);
+            pushCommandOneArg("JPOS", codeStack.size()+7);     
+            memToRegister(7);
+            pushCommandOneArg("SHIFT", 2);
+            registerToMem(3);
+            memToRegister(7);
+            pushCommandOneArg("SUB", 3);
+            pushCommandOneArg("JUMP", codeStack.size()+2);
+				memToRegister(7);	
+		}	
+		
     argumentsTabIndex[0] = "null";
     argumentsTabIndex[1] = "null";
     expressionArguments[0] = "null";
