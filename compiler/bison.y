@@ -857,27 +857,36 @@ void divide() {
     removeIdentifier(a.name);
     removeIdentifier(b.name);
 
-  } else if (b.type == "NUM" && isPowerOf2(b.name)) {
+  } /*else if (b.type == "NUM" && isPowerOf2(b.name)) {
     setRegister(to_string(1 - isPowerOf2(b.name)));
     registerToMem(3);
     setToRegister(a, aI);
-
     if (stoi(b.name) < 0) {
       pushCommandOneArg("SHIFT", 3);
+      pushCommandOneArg("JPOS",codeStack.size()+3);
+      pushCommandOneArg("JZERO",codeStack.size()+2);
+      pushCommand("INC");
       pushCommandOneArg("SHIFT", 2);
       registerToMem(4);
       setToRegister(a, aI);
       pushCommandOneArg("SHIFT", 3);
+      pushCommandOneArg("JPOS",codeStack.size()+3);
+      pushCommandOneArg("JZERO",codeStack.size()+2);
+      pushCommand("INC");
       pushCommandOneArg("SUB", 4);
 
     } else if (stoi(b.name) > 0) {
       pushCommandOneArg("SHIFT", 3);
+      pushCommandOneArg("JPOS",codeStack.size()+3);
+    	pushCommandOneArg("JZERO",codeStack.size()+2);
+    	pushCommand("INC");
     } else {
       zeroRegister();
     }
+
     removeIdentifier(b.name);
 
-  } else {
+  }*/ else {
     zeroRegister();
     registerToMem(7);
     registerToMem(4);
@@ -914,7 +923,7 @@ void divide() {
     pushCommandOneArg("JPOS", codeStack.size() + 4);
     pushCommandOneArg("JZERO", codeStack.size() + 3);
     zeroRegister();
-    pushCommandOneArg("JUMP", codeStack.size() + 55);
+    pushCommandOneArg("JUMP", codeStack.size() + 53);
 
     //R = a
     memToRegister(5);
@@ -984,6 +993,7 @@ void divide() {
     pushCommandOneArg("JUMP", codeStack.size() + 2);
     memToRegister(7);
   }
+
 
   argumentsTabIndex[0] = "null";
   argumentsTabIndex[1] = "null";
