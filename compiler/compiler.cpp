@@ -17,7 +17,7 @@ string argumentsTabIndex[2] = {"null", "null"};
 void setUp() {
   writeFlag = 0;
   assignFlag = 1;
-  memCounter = 13;
+  memCounter = 15;
   depth = 0;
 
   //create 0
@@ -446,9 +446,9 @@ string decToBin(long long int n) {
   return r;
 }
 
-int isPowerOf2(string value) {
+long long int isPowerOf2(string value) {
   string bin = decToBin(stoll(value));
-  int length = bin.size();
+  long long int length = bin.size();
   if (bin[0] == '1' && bin.substr(1).find("1") == string::npos)
     return length;
   else

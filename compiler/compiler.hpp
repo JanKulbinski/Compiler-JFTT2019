@@ -85,7 +85,7 @@ void setUp();
 void printCode(string outFileName);
 void createJump(Jump *j, long long int stack, long long int depth);
 long long int setToTempMem(Identifier a, Identifier aI, long long int tempMem);
-int isPowerOf2(string value);
+long long int isPowerOf2(string value);
 string decToBin(long long int n);
 
 //VIRTUAL MACHINE
