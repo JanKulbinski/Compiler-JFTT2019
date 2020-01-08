@@ -5,14 +5,12 @@ extern int yylex();
 extern int yylineno;
 extern FILE *yyin;
 void yyerror(const string str);
-
 %}
 
 %define parse.error verbose
 %define parse.lac full
 %union {
     char* str;
-    long long int num;
 }
 
 %token <str> NUM IDENTIFIER
@@ -108,7 +106,7 @@ int main(int argv, char * argc[]) {
 
   yyin = fopen(argc[1], "r");
   if (yyin == NULL) {
-    cout << (argc[1], 0, "File does not exist:");
+    cout << (argc[1], 0, "File does not exist");
     exit(1);
   } else {
     setUp();

@@ -72,18 +72,6 @@ void modulo() {
     registerToMem(5);
 	 memToRegister(2);
     registerToMem(8);
-    
-   /*memToRegister(5);
-    // R = a
-    registerToMem(10);
-    // if(|a| < |b|) return a
-    pushCommandOneArg("SUB", 6);
-    pushCommandOneArg("JPOS", codeStack.size() + 5);
-    pushCommandOneArg("JZERO", codeStack.size() + 4);
-    zeroRegister();
-    registerToMem(12);
-    pushCommandOneArg("JUMP", codeStack.size() + 49);
-*/
 
     //R = a
     memToRegister(5);
@@ -149,48 +137,33 @@ void modulo() {
     pushCommand("DEC");
     pushCommandOneArg("JUMP", stackJ1);
 
-    //if(a.old * b.old < 0) c = -c 
-    /*memToRegister(8);
-    pushCommandOneArg("JNEG", codeStack.size() + 7);
-    memToRegister(10);
-    pushCommandOneArg("SHIFT", 2);
-    registerToMem(3);
-    memToRegister(10);
-    pushCommandOneArg("SUB", 3);
-    pushCommandOneArg("JUMP", codeStack.size() + 2);
-*/
     //R = R / 2^(#bits of a)
     memToRegister(10);
     pushCommandOneArg("SHIFT", 12);
     registerToMem(10);
-   	
-    
+   	 
     memToRegister(8);
     pushCommandOneArg("JZERO",codeStack.size() + 9);  // a > 0
     
-    memToRegister(13);			// a < 0		
-    pushCommandOneArg("JZERO", codeStack.size() + 4); 
+    memToRegister(13);									
+    pushCommandOneArg("JZERO", codeStack.size() + 4); // a < 0
     
-    zeroRegister();			// a < 0 b < 0
+    zeroRegister();								// a < 0 b < 0
     pushCommandOneArg("SUB", 10);
     pushCommandOneArg("JUMP",codeStack.size() + 10);
     
-    memToRegister(14);
-    			// a < 0 b > 0
+    memToRegister(14); 							// a < 0 b > 0					
     pushCommandOneArg("SUB", 10);
     pushCommandOneArg("JUMP",codeStack.size() + 7);
     		
-    memToRegister(13);
+    memToRegister(13);							// a > 0 b < 0	
     pushCommandOneArg("JZERO", codeStack.size() + 4);
-    							// a > 0 b < 0		
+    								
     memToRegister(10);
     pushCommandOneArg("ADD", 14);
     pushCommandOneArg("JUMP",codeStack.size() + 2);
-    
-        							// a > 0 b > 0		
-    memToRegister(10);
-    
-    //memToRegister(8);
+            								
+    memToRegister(10);							// a > 0 b > 0
   }
 
   argumentsTabIndex[0] = "null";
@@ -352,36 +325,7 @@ void divide() {
     removeIdentifier(a.name);
     removeIdentifier(b.name);
 
-  } /*else if (b.type == "NUM" && isPowerOf2(b.name)) {
-    setRegister(to_string(1 - isPowerOf2(b.name)));
-    registerToMem(3);
-    setToRegister(a, aI);
-    if (stoll(b.name) < 0) {
-      pushCommandOneArg("SHIFT", 3);
-      pushCommandOneArg("JPOS",codeStack.size()+3);
-      pushCommandOneArg("JZERO",codeStack.size()+2);
-      pushCommand("INC");
-      pushCommandOneArg("SHIFT", 2);
-      registerToMem(4);
-      setToRegister(a, aI);
-      pushCommandOneArg("SHIFT", 3);
-      pushCommandOneArg("JPOS",codeStack.size()+3);
-      pushCommandOneArg("JZERO",codeStack.size()+2);
-      pushCommand("INC");
-      pushCommandOneArg("SUB", 4);
-
-    } else if (stoll(b.name) > 0) {
-      pushCommandOneArg("SHIFT", 3);
-      pushCommandOneArg("JPOS",codeStack.size()+3);
-    	pushCommandOneArg("JZERO",codeStack.size()+2);
-    	pushCommand("INC");
-    } else {
-      zeroRegister();
-    }
-
-    removeIdentifier(b.name);
-
-  }*/ else {
+  } else {
     zeroRegister();
     registerToMem(7);
     registerToMem(4);

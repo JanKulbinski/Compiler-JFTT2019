@@ -77,11 +77,6 @@ void forTo() {
   pushCommand("JPOS");
   assignFlag = 1;
   
-  //  argumentsTabIndex[0] = "null";
- // argumentsTabIndex[1] = "null";
- // expressionArguments[0] = "null";
-//  expressionArguments[1] = "null";
-  
 }
 
 void forDownTo() {
