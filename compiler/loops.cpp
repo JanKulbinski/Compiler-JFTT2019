@@ -58,21 +58,23 @@ void forTo() {
   }
 
   Identifier s;
-  createIdentifier( & s, "L" + depth, 0, 0, "IDE", 0);
-  insertIdentifier("L" + depth, s);
+  string limitVariable = "L" + to_string(depth);
+  createIdentifier( &s, limitVariable, 0, 0, "IDE", 0);
+  insertIdentifier(limitVariable, s);
+  
   s.initialized = 1;
   registerToMem(s.mem);
 
   Jump j;
-  createJump( & j, codeStack.size(), depth);
+  createJump( &j, codeStack.size(), depth);
   jumpStack.push_back(j);
   memToRegister(assignTarget.mem);
   pushCommand("INC");
   registerToMem(assignTarget.mem);
-  subtractIdentifires(assignTarget.name, "L" + depth);
+  subtractIdentifires(assignTarget.name,limitVariable);
 
   Jump jump;
-  createJump( & jump, codeStack.size(), depth);
+  createJump( &jump, codeStack.size(), depth);
   jumpStack.push_back(jump);
   pushCommand("JPOS");
   assignFlag = 1;
@@ -119,8 +121,9 @@ void forDownTo() {
   }
 
   Identifier s;
-  createIdentifier( & s, "L" + depth, 0, 0, "IDE", 0);
-  insertIdentifier("L" + depth, s);
+  string limitVariable = "L" + to_string(depth);
+  createIdentifier( & s, limitVariable, 0, 0, "IDE", 0);
+  insertIdentifier(limitVariable, s);
   s.initialized = 1;
   registerToMem(s.mem);
 
@@ -130,8 +133,9 @@ void forDownTo() {
   memToRegister(assignTarget.mem);
   pushCommand("DEC");
   registerToMem(assignTarget.mem);
-  subtractIdentifires(assignTarget.name, "L" + depth);
 
+  subtractIdentifires(assignTarget.name, limitVariable);
+  
   Jump jump;
   createJump( & jump, codeStack.size(), depth);
   jumpStack.push_back(jump);
@@ -149,8 +153,7 @@ void forEnd() {
   addInt(jumpStack.at(jumpCount).placeInStack, codeStack.size());
   jumpStack.pop_back();
   jumpStack.pop_back();
-
-  removeIdentifier("L" + depth);
+  removeIdentifier("L" + to_string(depth));
   removeIdentifier(forStack.back());
   forStack.pop_back();
   depth--;

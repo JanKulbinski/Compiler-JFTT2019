@@ -54,7 +54,7 @@ void read(int yylineno);
 void soloValue();
 void add();
 void subtract();
-void multiplication();
+void multiply();
 void subtractIdentifires(string a, string b);
 void divide();
 void modulo();

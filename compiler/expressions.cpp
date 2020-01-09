@@ -139,6 +139,8 @@ void modulo() {
 
     //R = R / 2^(#bits of a)
     memToRegister(10);
+    pushCommandOneArg("JZERO",codeStack.size() + 19);
+    
     pushCommandOneArg("SHIFT", 12);
     registerToMem(10);
    	 
@@ -172,7 +174,7 @@ void modulo() {
   expressionArguments[1] = "null";
 }
 
-void multiplication() {
+void multiply() {
 
   Identifier a = identifierStack.at(expressionArguments[0]);
   Identifier b = identifierStack.at(expressionArguments[1]);
@@ -472,15 +474,17 @@ void divide() {
 void subtractIdentifires(string a, string b) {
   expressionArguments[0] = a;
   expressionArguments[1] = b;
+  
   subtract();
 }
 
 void subtract() {
-
+	
   Identifier a = identifierStack.at(expressionArguments[0]);
   Identifier b = identifierStack.at(expressionArguments[1]);
   expressionArguments[0] = "null";
   expressionArguments[1] = "null";
+  
   if (a.type != "ARR" && b.type != "ARR") {
     if (a.type == "NUM" && b.type == "NUM") {
       long long int val = stoll(a.name) - stoll(b.name);

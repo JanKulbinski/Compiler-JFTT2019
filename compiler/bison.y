@@ -66,7 +66,7 @@ expression:
     value                                          { soloValue(); }
     | value ADD value                              { add(); }
     | value SUB value                              { subtract(); }
-    | value MUL value                              { multiplication(); }
+    | value MUL value                              { multiply(); }
     | value DIV value                              { divide(); }
     | value MOD value                              { modulo(); }
     ;
