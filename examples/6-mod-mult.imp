@@ -3,9 +3,6 @@
 ? 1234567890987654321
 ? 987654321
 > 674106858
-dziala tylko tak:
-? 987654
-> 230154
 ]
 DECLARE
     a, b, c, wynik, pot, wybor
