@@ -3,7 +3,7 @@
 vector<string> codeStack;
 vector<Jump> jumpStack;
 vector<string> forStack;
-map<string, Identifier> identifierStack;
+map<string, Identifier> identifierMap;
 
 int assignFlag;
 int writeFlag;
@@ -185,7 +185,7 @@ void endIfBlock() {
 void assign(int yylineno) {
   if (assignTarget.type == "ARR") {
 
-    Identifier index = identifierStack.at(tabAssignTargetIndex);
+    Identifier index = identifierMap.at(tabAssignTargetIndex);
     if (index.type == "NUM") {
       if (stoll(index.name) < assignTarget.begin || stoll(index.name) >= assignTarget.begin + assignTarget.tableSize) {
        cout << assignTarget.tableSize << endl;
@@ -211,12 +211,12 @@ void assign(int yylineno) {
     exit(1);
   }
 
-  identifierStack.at(assignTarget.name).initialized = 1;
+  identifierMap.at(assignTarget.name).initialized = 1;
   assignFlag = 1;
 }
 
 void soloValue() {
-  Identifier value = identifierStack.at(expressionArguments[0]);
+  Identifier value = identifierMap.at(expressionArguments[0]);
 
   if (value.type == "NUM") {
     setRegister(value.name);
@@ -225,7 +225,7 @@ void soloValue() {
   } else if (value.type == "IDE") {
     memToRegister(value.mem);
   } else {
-    Identifier index = identifierStack.at(argumentsTabIndex[0]);
+    Identifier index = identifierMap.at(argumentsTabIndex[0]);
     if (index.type == "NUM") {
       long long int tabElMem = value.mem + (stoll(index.name) - value.begin);
 
@@ -264,7 +264,7 @@ void number(string variable, int yylineno) {
 
 //DECLARATION
 void declareIdent(string variable, int yylineno) {
-  if (identifierStack.find(variable) != identifierStack.end()) {
+  if (identifierMap.find(variable) != identifierMap.end()) {
     cout << "Line: " << yylineno << ". Error: Variable " << variable <<" has been already declared"<<endl;
     exit(1);
   } else {
@@ -276,7 +276,7 @@ void declareIdent(string variable, int yylineno) {
 
 void declareArr(string variable, string begin, string end, int yylineno) {
 
-  if (identifierStack.find(variable) != identifierStack.end()) {
+  if (identifierMap.find(variable) != identifierMap.end()) {
     cout << "Line: " << yylineno << ". Error: Variable " << variable <<" has been already declared"<<endl;
     exit(1);
   } else if (stoll(begin) > stoll(end)) {
@@ -292,12 +292,12 @@ void declareArr(string variable, string begin, string end, int yylineno) {
 }
 
 void insertIdentifier(string key, Identifier i) {
-  if (identifierStack.count(key) == 0) {
-    identifierStack.insert(make_pair(key, i));
-    identifierStack.at(key).counter = 0;
+  if (identifierMap.count(key) == 0) {
+    identifierMap.insert(make_pair(key, i));
+    identifierMap.at(key).counter = 0;
     memCounter++;
   } else {
-    identifierStack.at(key).counter = identifierStack.at(key).counter + 1;
+    identifierMap.at(key).counter = identifierMap.at(key).counter + 1;
   }
 }
 
@@ -324,11 +324,11 @@ void createIdentifier(Identifier * s, string name, long long int isLocal,
 }
 
 void removeIdentifier(string key) {
-  if (identifierStack.count(key) > 0) {
-    if (identifierStack.at(key).counter > 0) {
-      identifierStack.at(key).counter = identifierStack.at(key).counter - 1;
+  if (identifierMap.count(key) > 0) {
+    if (identifierMap.at(key).counter > 0) {
+      identifierMap.at(key).counter = identifierMap.at(key).counter - 1;
     } else {
-      identifierStack.erase(key);
+      identifierMap.erase(key);
       memCounter--;
     }
   }
@@ -345,14 +345,14 @@ void addInt(long long int command, long long int val) {
 
 void ident(string variable, int yylineno) {
 
-  if (identifierStack.find(variable) == identifierStack.end()) {
+  if (identifierMap.find(variable) == identifierMap.end()) {
     cout << "Line: " << yylineno << ". Error: Undeclared variable " << variable << endl;
     exit(1);
   }
 
-  if (identifierStack.at(variable).tableSize == 0) {
+  if (identifierMap.at(variable).tableSize == 0) {
     if (!assignFlag) {
-      if (identifierStack.at(variable).initialized == 0) {
+      if (identifierMap.at(variable).initialized == 0) {
         cout << "Line: " << yylineno << ". Error: Attempt to use uninitialized value " << variable << endl;
         exit(1);
       }
@@ -363,7 +363,7 @@ void ident(string variable, int yylineno) {
       }
 
     } else {
-      assignTarget = identifierStack.at(variable);
+      assignTarget = identifierMap.at(variable);
     }
   } else {
     cout << "Line: " << yylineno << ". Error: " << variable << " is an array" << endl;
@@ -373,22 +373,22 @@ void ident(string variable, int yylineno) {
 
 void identIdent(string tab, string i, int yylineno) {
 
-  if (identifierStack.find(tab) == identifierStack.end()) {
+  if (identifierMap.find(tab) == identifierMap.end()) {
     cout << "Line: " << yylineno << ". Error: Undecleared variable " << tab << endl;
     exit(1);
   }
   
-  if (identifierStack.find(i) == identifierStack.end()) {
+  if (identifierMap.find(i) == identifierMap.end()) {
     cout << "Line: " << yylineno << ". Error: Undecleared variable " << i << endl;
     exit(1);
   }
 
-  if (identifierStack.at(tab).tableSize == 0) {
+  if (identifierMap.at(tab).tableSize == 0) {
     cout << "Line: " << yylineno << ". Error: Variable " << tab << " is not an array" << endl;
     exit(1);
   }
 
-  if (identifierStack.at(i).initialized == 0) {
+  if (identifierMap.at(i).initialized == 0) {
   	 cout << "Line: " << yylineno << ". Error: Attempt to use uninitialized value " << i << endl;
     exit(1);
   }
@@ -402,18 +402,18 @@ void identIdent(string tab, string i, int yylineno) {
       argumentsTabIndex[1] = i;
     }
   } else {
-    assignTarget = identifierStack.at(tab);
+    assignTarget = identifierMap.at(tab);
     tabAssignTargetIndex = i;
   }
 }
 
 void identNum(string tab, string num, int yylineno) {
-  if (identifierStack.find(tab) == identifierStack.end()) {
+  if (identifierMap.find(tab) == identifierMap.end()) {
   	 cout << "Line: " << yylineno << ". Error: Undecleared variable " << tab << endl;
     exit(1);
   }
 
-  if (identifierStack.at(tab).tableSize == 0) {
+  if (identifierMap.at(tab).tableSize == 0) {
     cout << "Line: " << yylineno << ". Error: Variable " << tab <<" is not an array." << endl;
     exit(1);
   } else {
@@ -431,7 +431,7 @@ void identNum(string tab, string num, int yylineno) {
       }
 
     } else {
-      assignTarget = identifierStack.at(tab);
+      assignTarget = identifierMap.at(tab);
       tabAssignTargetIndex = num;
     }
   }

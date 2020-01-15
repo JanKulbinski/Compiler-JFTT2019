@@ -14,13 +14,13 @@ using namespace std;
 
 typedef struct {
 	string name;
-   string type; //NUM, IDE, ARR
+   string type; 		//number = NUM, identifier = IDE, array = ARR
    int initialized;
-   int counter;
+   int local;
    long long int begin;
 	long long int mem;
-	long long int local;
   	long long int tableSize;
+  	long long int counter;
 } Identifier;
 
 typedef struct {
@@ -31,7 +31,7 @@ typedef struct {
 extern vector<string> codeStack;
 extern vector<Jump> jumpStack;
 extern vector<string> forStack;
-extern map<string, Identifier> identifierStack;
+extern map<string, Identifier> identifierMap;
 
 extern int assignFlag;
 extern int writeFlag;

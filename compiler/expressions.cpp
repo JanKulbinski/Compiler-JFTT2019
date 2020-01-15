@@ -2,14 +2,14 @@
 
 void modulo() {
 
-  Identifier a = identifierStack.at(expressionArguments[0]);
-  Identifier b = identifierStack.at(expressionArguments[1]);
+  Identifier a = identifierMap.at(expressionArguments[0]);
+  Identifier b = identifierMap.at(expressionArguments[1]);
 
   Identifier aI, bI;
-  if (identifierStack.count(argumentsTabIndex[0]) > 0)
-    aI = identifierStack.at(argumentsTabIndex[0]);
-  if (identifierStack.count(argumentsTabIndex[1]) > 0)
-    bI = identifierStack.at(argumentsTabIndex[1]);
+  if (identifierMap.count(argumentsTabIndex[0]) > 0)
+    aI = identifierMap.at(argumentsTabIndex[0]);
+  if (identifierMap.count(argumentsTabIndex[1]) > 0)
+    bI = identifierMap.at(argumentsTabIndex[1]);
 
   if (a.type == "NUM" && stoll(a.name) == 0) {
     zeroRegister();
@@ -176,14 +176,14 @@ void modulo() {
 
 void multiply() {
 
-  Identifier a = identifierStack.at(expressionArguments[0]);
-  Identifier b = identifierStack.at(expressionArguments[1]);
+  Identifier a = identifierMap.at(expressionArguments[0]);
+  Identifier b = identifierMap.at(expressionArguments[1]);
 
   Identifier aI, bI;
-  if (identifierStack.count(argumentsTabIndex[0]) > 0)
-    aI = identifierStack.at(argumentsTabIndex[0]);
-  if (identifierStack.count(argumentsTabIndex[1]) > 0)
-    bI = identifierStack.at(argumentsTabIndex[1]);
+  if (identifierMap.count(argumentsTabIndex[0]) > 0)
+    aI = identifierMap.at(argumentsTabIndex[0]);
+  if (identifierMap.count(argumentsTabIndex[1]) > 0)
+    bI = identifierMap.at(argumentsTabIndex[1]);
 
   if (a.type == "NUM" && b.type == "NUM") {
     long long int val = stoll(a.name) * stoll(b.name);
@@ -232,15 +232,14 @@ void multiply() {
     removeIdentifier(b.name);
 
   } else {
-
-    /* Optimalization plans: change order a,b if a > b*/
+  
     zeroRegister();
     registerToMem(7);
     pushCommand("DEC");
     registerToMem(8);
     setToTempMem(a, aI, 5);
     setToTempMem(b, bI, 6);
-
+	 	 
     //if (b < 0) b = -b         	
     pushCommandOneArg("JPOS", codeStack.size() + 8);
     pushCommandOneArg("SHIFT", 2);
@@ -264,6 +263,19 @@ void multiply() {
     registerToMem(8);
     memToRegister(5);
 
+	 // if a > b swap(a,b)
+	 pushCommand("SUB 6");
+	 pushCommandOneArg("JNEG", codeStack.size() + 8);
+	 pushCommandOneArg("JZERO", codeStack.size() + 7);
+    memToRegister(6);
+    registerToMem(3);
+    memToRegister(5);
+    registerToMem(6);
+    memToRegister(3);
+    registerToMem(5);
+   
+    memToRegister(5);
+    
     // a * b
     int stackJ = codeStack.size();
     pushCommandOneArg("JZERO", codeStack.size() + 16);
@@ -303,14 +315,14 @@ void multiply() {
 
 void divide() {
 
-  Identifier a = identifierStack.at(expressionArguments[0]);
-  Identifier b = identifierStack.at(expressionArguments[1]);
+  Identifier a = identifierMap.at(expressionArguments[0]);
+  Identifier b = identifierMap.at(expressionArguments[1]);
 
   Identifier aI, bI;
-  if (identifierStack.count(argumentsTabIndex[0]) > 0)
-    aI = identifierStack.at(argumentsTabIndex[0]);
-  if (identifierStack.count(argumentsTabIndex[1]) > 0)
-    bI = identifierStack.at(argumentsTabIndex[1]);
+  if (identifierMap.count(argumentsTabIndex[0]) > 0)
+    aI = identifierMap.at(argumentsTabIndex[0]);
+  if (identifierMap.count(argumentsTabIndex[1]) > 0)
+    bI = identifierMap.at(argumentsTabIndex[1]);
 
   if (a.type == "NUM" && stoll(a.name) == 0) {
     zeroRegister();
@@ -480,8 +492,8 @@ void subtractIdentifires(string a, string b) {
 
 void subtract() {
 	
-  Identifier a = identifierStack.at(expressionArguments[0]);
-  Identifier b = identifierStack.at(expressionArguments[1]);
+  Identifier a = identifierMap.at(expressionArguments[0]);
+  Identifier b = identifierMap.at(expressionArguments[1]);
   expressionArguments[0] = "null";
   expressionArguments[1] = "null";
   
@@ -511,10 +523,10 @@ void subtract() {
     }
   } else {
     Identifier aIndex, bIndex;
-    if (identifierStack.count(argumentsTabIndex[0]) > 0)
-      aIndex = identifierStack.at(argumentsTabIndex[0]);
-    if (identifierStack.count(argumentsTabIndex[1]) > 0)
-      bIndex = identifierStack.at(argumentsTabIndex[1]);
+    if (identifierMap.count(argumentsTabIndex[0]) > 0)
+      aIndex = identifierMap.at(argumentsTabIndex[0]);
+    if (identifierMap.count(argumentsTabIndex[1]) > 0)
+      bIndex = identifierMap.at(argumentsTabIndex[1]);
     argumentsTabIndex[0] = "null";
     argumentsTabIndex[1] = "null";
 
@@ -629,8 +641,8 @@ void subtract() {
 
 void add() {
 
-  Identifier a = identifierStack.at(expressionArguments[0]);
-  Identifier b = identifierStack.at(expressionArguments[1]);
+  Identifier a = identifierMap.at(expressionArguments[0]);
+  Identifier b = identifierMap.at(expressionArguments[1]);
   expressionArguments[0] = "null";
   expressionArguments[1] = "null";
 
@@ -659,10 +671,10 @@ void add() {
     }
   } else {
     Identifier aIndex, bIndex;
-    if (identifierStack.count(argumentsTabIndex[0]) > 0)
-      aIndex = identifierStack.at(argumentsTabIndex[0]);
-    if (identifierStack.count(argumentsTabIndex[1]) > 0)
-      bIndex = identifierStack.at(argumentsTabIndex[1]);
+    if (identifierMap.count(argumentsTabIndex[0]) > 0)
+      aIndex = identifierMap.at(argumentsTabIndex[0]);
+    if (identifierMap.count(argumentsTabIndex[1]) > 0)
+      bIndex = identifierMap.at(argumentsTabIndex[1]);
     argumentsTabIndex[0] = "null";
     argumentsTabIndex[1] = "null";
 

@@ -100,7 +100,7 @@ void yyerror(const string str) {
 
 int main(int argv, char * argc[]) {
   if (argv != 3) {
-    cout << "Error: inaccurate number of arguments. \e[1m[ VALID USAGE ]\e[0m compiler input output" << endl;
+    cout << "Error: inaccurate number of arguments. [ VALID USAGE ] kompilator input output" << endl;
     exit(1);
   }
 
@@ -113,7 +113,6 @@ int main(int argv, char * argc[]) {
     yyparse();
     string file = argc[2];
     printCode(file);
-    cout << "Compiled without errors" << endl;
   }
   return 0;
 }

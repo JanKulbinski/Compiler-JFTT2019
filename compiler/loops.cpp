@@ -2,7 +2,7 @@
 
 void forBegin(string variable, int yylineno) {
 
-  if (identifierStack.find(variable) != identifierStack.end()) {
+  if (identifierMap.find(variable) != identifierMap.end()) {
     cout << "Line: " << yylineno << ". Error: Variable " << variable <<" has been already declared"<<endl;
     exit(1);
   } else {
@@ -14,19 +14,19 @@ void forBegin(string variable, int yylineno) {
   }
 
   assignFlag = 0;
-  assignTarget = identifierStack.at(variable);
+  assignTarget = identifierMap.at(variable);
   depth++;
 }
 
 void forTo() {
 
-  Identifier a = identifierStack.at(expressionArguments[0]);
+  Identifier a = identifierMap.at(expressionArguments[0]);
   if (a.type == "NUM") {
     setRegister(a.name);
   } else if (a.type == "IDE") {
     memToRegister(a.mem);
   } else {
-    Identifier index = identifierStack.at(argumentsTabIndex[0]);
+    Identifier index = identifierMap.at(argumentsTabIndex[0]);
     if (index.type == "NUM") {
       long long int tabElMem = a.mem + (stoll(index.name) - a.begin);
       memToRegister(tabElMem);
@@ -40,13 +40,13 @@ void forTo() {
   registerToMem(assignTarget.mem);
   assignTarget.initialized = 1;
 
-  Identifier b = identifierStack.at(expressionArguments[1]);
+  Identifier b = identifierMap.at(expressionArguments[1]);
   if (b.type == "NUM") {
     setRegister(b.name);
   } else if (b.type == "IDE") {
     memToRegister(b.mem);
   } else {
-    Identifier index = identifierStack.at(argumentsTabIndex[1]);
+    Identifier index = identifierMap.at(argumentsTabIndex[1]);
     if (index.type == "NUM") {
       long long int tabElMem = b.mem + (stoll(index.name) - b.begin);
       memToRegister(tabElMem);
@@ -83,13 +83,13 @@ void forTo() {
 
 void forDownTo() {
 
-  Identifier a = identifierStack.at(expressionArguments[0]);
+  Identifier a = identifierMap.at(expressionArguments[0]);
   if (a.type == "NUM") {
     setRegister(a.name);
   } else if (a.type == "IDE") {
     memToRegister(a.mem);
   } else {
-    Identifier index = identifierStack.at(argumentsTabIndex[0]);
+    Identifier index = identifierMap.at(argumentsTabIndex[0]);
     if (index.type == "NUM") {
       long long int tabElMem = a.mem + (stoll(index.name) - a.begin);
       memToRegister(tabElMem);
@@ -103,13 +103,13 @@ void forDownTo() {
   registerToMem(assignTarget.mem);
   assignTarget.initialized = 1;
 
-  Identifier b = identifierStack.at(expressionArguments[1]);
+  Identifier b = identifierMap.at(expressionArguments[1]);
   if (b.type == "NUM") {
     setRegister(b.name);
   } else if (b.type == "IDE") {
     memToRegister(b.mem);
   } else {
-    Identifier index = identifierStack.at(argumentsTabIndex[1]);
+    Identifier index = identifierMap.at(argumentsTabIndex[1]);
     if (index.type == "NUM") {
       long long int tabElMem = b.mem + (stoll(index.name) - b.begin);
       memToRegister(tabElMem);
