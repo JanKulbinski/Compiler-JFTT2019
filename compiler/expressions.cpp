@@ -45,10 +45,10 @@ void modulo() {
     registerToMem(14);
     
     //if (b < 0) b = -b
-    pushCommandOneArg("JNEG", codeStack.size() + 4);    
-    pushCommandOneArg("JPOS", codeStack.size() + 10);
+    pushCommandOneArg("JNEG", codeVector.size() + 4);    
+    pushCommandOneArg("JPOS", codeVector.size() + 10);
 	 zeroRegister();
-	 pushCommandOneArg("JUMP", codeStack.size() + 88);
+	 pushCommandOneArg("JUMP", codeVector.size() + 88);
     pushCommandOneArg("SHIFT", 2);
     registerToMem(3);
     memToRegister(6);
@@ -61,10 +61,10 @@ void modulo() {
 
     //if (a < 0) a = -a
     memToRegister(5);
-    pushCommandOneArg("JNEG", codeStack.size() + 4);    
-    pushCommandOneArg("JPOS", codeStack.size() + 10);
+    pushCommandOneArg("JNEG", codeVector.size() + 4);    
+    pushCommandOneArg("JPOS", codeVector.size() + 10);
 	 zeroRegister();
-	 pushCommandOneArg("JUMP", codeStack.size() + 76);
+	 pushCommandOneArg("JUMP", codeVector.size() + 76);
     pushCommandOneArg("SHIFT", 2);
     registerToMem(3);
     memToRegister(5);
@@ -81,12 +81,12 @@ void modulo() {
     //compute n = #bits of a
     memToRegister(11);
     pushCommandOneArg("SHIFT", 9);
-    pushCommandOneArg("JZERO", codeStack.size() + 6);
+    pushCommandOneArg("JZERO", codeVector.size() + 6);
     registerToMem(11);
     memToRegister(4);
     pushCommand("INC");
     registerToMem(4);
-    pushCommandOneArg("JUMP", codeStack.size() - 7);
+    pushCommandOneArg("JUMP", codeVector.size() - 7);
 
     //b = b << n
     memToRegister(4);
@@ -107,8 +107,8 @@ void modulo() {
     memToRegister(4);
     pushCommand("DEC");
     // for n-1 .. 0
-    int stackJ1 = codeStack.size();
-    pushCommandOneArg("JNEG", codeStack.size() + 23);
+    int stackJ1 = codeVector.size();
+    pushCommandOneArg("JNEG", codeVector.size() + 23);
     registerToMem(4);
 
     // R = R*2 - D
@@ -118,7 +118,7 @@ void modulo() {
     registerToMem(10);
 
     // if R >= 0
-    pushCommandOneArg("JNEG", codeStack.size() + 8);
+    pushCommandOneArg("JNEG", codeVector.size() + 8);
     memToRegister(7);
     pushCommandOneArg("SHIFT", 2);
     pushCommand("INC");
@@ -139,31 +139,31 @@ void modulo() {
 
     //R = R / 2^(#bits of a)
     memToRegister(10);
-    pushCommandOneArg("JZERO",codeStack.size() + 19);
+    pushCommandOneArg("JZERO",codeVector.size() + 19);
     
     pushCommandOneArg("SHIFT", 12);
     registerToMem(10);
    	 
     memToRegister(8);
-    pushCommandOneArg("JZERO",codeStack.size() + 9);  // a > 0
+    pushCommandOneArg("JZERO",codeVector.size() + 9);  // a > 0
     
     memToRegister(13);									
-    pushCommandOneArg("JZERO", codeStack.size() + 4); // a < 0
+    pushCommandOneArg("JZERO", codeVector.size() + 4); // a < 0
     
     zeroRegister();								// a < 0 b < 0
     pushCommandOneArg("SUB", 10);
-    pushCommandOneArg("JUMP",codeStack.size() + 10);
+    pushCommandOneArg("JUMP",codeVector.size() + 10);
     
     memToRegister(14); 							// a < 0 b > 0					
     pushCommandOneArg("SUB", 10);
-    pushCommandOneArg("JUMP",codeStack.size() + 7);
+    pushCommandOneArg("JUMP",codeVector.size() + 7);
     		
     memToRegister(13);							// a > 0 b < 0	
-    pushCommandOneArg("JZERO", codeStack.size() + 4);
+    pushCommandOneArg("JZERO", codeVector.size() + 4);
     								
     memToRegister(10);
     pushCommandOneArg("ADD", 14);
-    pushCommandOneArg("JUMP",codeStack.size() + 2);
+    pushCommandOneArg("JUMP",codeVector.size() + 2);
             								
     memToRegister(10);							// a > 0 b > 0
   }
@@ -241,7 +241,7 @@ void multiply() {
     setToTempMem(b, bI, 6);
 	 	 
     //if (b < 0) b = -b         	
-    pushCommandOneArg("JPOS", codeStack.size() + 8);
+    pushCommandOneArg("JPOS", codeVector.size() + 8);
     pushCommandOneArg("SHIFT", 2);
     registerToMem(3);
     memToRegister(6);
@@ -252,7 +252,7 @@ void multiply() {
 
     //if (a < 0) a = -a
     memToRegister(5);
-    pushCommandOneArg("JPOS", codeStack.size() + 10);
+    pushCommandOneArg("JPOS", codeVector.size() + 10);
     pushCommandOneArg("SHIFT", 2);
     registerToMem(3);
     memToRegister(5);
@@ -265,8 +265,8 @@ void multiply() {
 
 	 // if a > b swap(a,b)
 	 pushCommand("SUB 6");
-	 pushCommandOneArg("JNEG", codeStack.size() + 8);
-	 pushCommandOneArg("JZERO", codeStack.size() + 7);
+	 pushCommandOneArg("JNEG", codeVector.size() + 8);
+	 pushCommandOneArg("JZERO", codeVector.size() + 7);
     memToRegister(6);
     registerToMem(3);
     memToRegister(5);
@@ -277,13 +277,13 @@ void multiply() {
     memToRegister(5);
     
     // a * b
-    int stackJ = codeStack.size();
-    pushCommandOneArg("JZERO", codeStack.size() + 16);
+    int stackJ = codeVector.size();
+    pushCommandOneArg("JZERO", codeVector.size() + 16);
     pushCommandOneArg("SHIFT", 9);
     pushCommandOneArg("SHIFT", 2);
     pushCommandOneArg("SUB", 5);
-    pushCommandOneArg("JNEG", codeStack.size() + 2);
-    pushCommandOneArg("JUMP", codeStack.size() + 4);
+    pushCommandOneArg("JNEG", codeVector.size() + 2);
+    pushCommandOneArg("JUMP", codeVector.size() + 4);
     memToRegister(7);
     pushCommandOneArg("ADD", 6);
     registerToMem(7);
@@ -297,14 +297,14 @@ void multiply() {
 
     //if(a.old * b.old < 0) c = -c 
     memToRegister(8);
-    pushCommandOneArg("JNEG", codeStack.size() + 8);
-    pushCommandOneArg("JPOS", codeStack.size() + 7);
+    pushCommandOneArg("JNEG", codeVector.size() + 8);
+    pushCommandOneArg("JPOS", codeVector.size() + 7);
     memToRegister(7);
     pushCommandOneArg("SHIFT", 2);
     registerToMem(3);
     memToRegister(7);
     pushCommandOneArg("SUB", 3);
-    pushCommandOneArg("JUMP", codeStack.size() + 2);
+    pushCommandOneArg("JUMP", codeVector.size() + 2);
     memToRegister(7);
   }
   argumentsTabIndex[0] = "null";
@@ -349,10 +349,10 @@ void divide() {
     setToTempMem(b, bI, 6);
 
     //if (b < 0) b = -b         	
-    pushCommandOneArg("JNEG", codeStack.size() + 4);    
-    pushCommandOneArg("JPOS", codeStack.size() + 10);
+    pushCommandOneArg("JNEG", codeVector.size() + 4);    
+    pushCommandOneArg("JPOS", codeVector.size() + 10);
 	 zeroRegister();
-	 int divZeroEnd = codeStack.size();
+	 int divZeroEnd = codeVector.size();
 	 pushCommand("JUMP");
     pushCommandOneArg("SHIFT", 2);
     registerToMem(3);
@@ -364,10 +364,10 @@ void divide() {
 
     //if (a < 0) a = -a
     memToRegister(5);
-    pushCommandOneArg("JNEG", codeStack.size() + 4);    
-    pushCommandOneArg("JPOS", codeStack.size() + 11);
+    pushCommandOneArg("JNEG", codeVector.size() + 4);    
+    pushCommandOneArg("JPOS", codeVector.size() + 11);
 	 zeroRegister();
-	 int divZeroEnd2 = codeStack.size();
+	 int divZeroEnd2 = codeVector.size();
 	 pushCommand("JUMP");
     pushCommandOneArg("SHIFT", 2);
     registerToMem(3);
@@ -381,24 +381,24 @@ void divide() {
 
     // if(|a| < |b|)
     pushCommandOneArg("SUB", 6);
-    pushCommandOneArg("JPOS", codeStack.size() + 17);	// |a| > |b|
-    pushCommandOneArg("JZERO", codeStack.size() + 8); // |a| = |b|
+    pushCommandOneArg("JPOS", codeVector.size() + 17);	// |a| > |b|
+    pushCommandOneArg("JZERO", codeVector.size() + 8); // |a| = |b|
     memToRegister(8);											// |a| < |b|
-    pushCommandOneArg("JPOS", codeStack.size() + 4);
-    pushCommandOneArg("JNEG", codeStack.size() + 3);								
+    pushCommandOneArg("JPOS", codeVector.size() + 4);
+    pushCommandOneArg("JNEG", codeVector.size() + 3);								
     pushCommand("DEC");
-    pushCommandOneArg("JUMP", codeStack.size() + 2);
+    pushCommandOneArg("JUMP", codeVector.size() + 2);
     zeroRegister();
-    pushCommandOneArg("JUMP", codeStack.size() + 66);
+    pushCommandOneArg("JUMP", codeVector.size() + 66);
     
     memToRegister(8);											// |a| = |b|
-    pushCommandOneArg("JPOS", codeStack.size() + 4);
-    pushCommandOneArg("JNEG", codeStack.size() + 3);	
+    pushCommandOneArg("JPOS", codeVector.size() + 4);
+    pushCommandOneArg("JNEG", codeVector.size() + 3);	
     pushCommand("DEC");
-    pushCommandOneArg("JUMP", codeStack.size() + 3);
+    pushCommandOneArg("JUMP", codeVector.size() + 3);
     zeroRegister();
     pushCommand("INC");
-    pushCommandOneArg("JUMP", codeStack.size() + 58);
+    pushCommandOneArg("JUMP", codeVector.size() + 58);
     
     //R = a
     memToRegister(5);
@@ -408,12 +408,12 @@ void divide() {
     //compute n = #bits of a
     memToRegister(11);
     pushCommandOneArg("SHIFT", 9);
-    pushCommandOneArg("JZERO", codeStack.size() + 6);
+    pushCommandOneArg("JZERO", codeVector.size() + 6);
     registerToMem(11);
     memToRegister(4);
     pushCommand("INC");
     registerToMem(4);
-    pushCommandOneArg("JUMP", codeStack.size() - 7);
+    pushCommandOneArg("JUMP", codeVector.size() - 7);
 
     //b = b << n
     memToRegister(4);
@@ -426,8 +426,8 @@ void divide() {
     pushCommand("DEC");
 
     // for n-1 .. 0
-    int stackJ1 = codeStack.size();
-    pushCommandOneArg("JNEG", codeStack.size() + 23);
+    int stackJ1 = codeVector.size();
+    pushCommandOneArg("JNEG", codeVector.size() + 23);
     registerToMem(4);
 
     // R = R*2 - D
@@ -437,7 +437,7 @@ void divide() {
     registerToMem(10);
 
     // if R >= 0
-    pushCommandOneArg("JNEG", codeStack.size() + 8);
+    pushCommandOneArg("JNEG", codeVector.size() + 8);
     memToRegister(7);
     pushCommandOneArg("SHIFT", 2);
     pushCommand("INC");
@@ -458,8 +458,8 @@ void divide() {
 
     //if(a.old * b.old < 0) c = -c 
     memToRegister(8);
-    pushCommandOneArg("JNEG", codeStack.size() + 13); // a > 0 and b > 0
-    pushCommandOneArg("JPOS", codeStack.size() + 12); // a < 0 and b < 0
+    pushCommandOneArg("JNEG", codeVector.size() + 13); // a > 0 and b > 0
+    pushCommandOneArg("JPOS", codeVector.size() + 12); // a < 0 and b < 0
     memToRegister(7);
     pushCommandOneArg("SHIFT", 2);
     registerToMem(3);
@@ -467,14 +467,14 @@ void divide() {
     pushCommandOneArg("SUB", 3);
     registerToMem(7);
     memToRegister(10);
-    pushCommandOneArg("JZERO", codeStack.size() + 4);
+    pushCommandOneArg("JZERO", codeVector.size() + 4);
     memToRegister(7);
     pushCommand("DEC");
-    pushCommandOneArg("JUMP", codeStack.size() + 2);
+    pushCommandOneArg("JUMP", codeVector.size() + 2);
     
     memToRegister(7);
-    addInt(divZeroEnd, codeStack.size());
-    addInt(divZeroEnd2, codeStack.size());
+    addInt(divZeroEnd, codeVector.size());
+    addInt(divZeroEnd2, codeVector.size());
   }
 
   argumentsTabIndex[0] = "null";

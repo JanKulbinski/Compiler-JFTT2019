@@ -10,7 +10,7 @@ void forBegin(string variable, int yylineno) {
     createIdentifier( &s, variable, 1, 0, "IDE", 0);
     s.initialized = 1;
     insertIdentifier(variable, s);
-    forStack.push_back(variable);
+    forVector.push_back(variable);
   }
 
   assignFlag = 0;
@@ -66,16 +66,16 @@ void forTo() {
   registerToMem(s.mem);
 
   Jump j;
-  createJump( &j, codeStack.size(), depth);
-  jumpStack.push_back(j);
+  createJump( &j, codeVector.size(), depth);
+  jumpVector.push_back(j);
   memToRegister(assignTarget.mem);
   pushCommand("INC");
   registerToMem(assignTarget.mem);
   subtractIdentifires(assignTarget.name,limitVariable);
 
   Jump jump;
-  createJump( &jump, codeStack.size(), depth);
-  jumpStack.push_back(jump);
+  createJump( &jump, codeVector.size(), depth);
+  jumpVector.push_back(jump);
   pushCommand("JPOS");
   assignFlag = 1;
   
@@ -128,8 +128,8 @@ void forDownTo() {
   registerToMem(s.mem);
 
   Jump j;
-  createJump( & j, codeStack.size(), depth);
-  jumpStack.push_back(j);
+  createJump( & j, codeVector.size(), depth);
+  jumpVector.push_back(j);
   memToRegister(assignTarget.mem);
   pushCommand("DEC");
   registerToMem(assignTarget.mem);
@@ -137,8 +137,8 @@ void forDownTo() {
   subtractIdentifires(assignTarget.name, limitVariable);
   
   Jump jump;
-  createJump( & jump, codeStack.size(), depth);
-  jumpStack.push_back(jump);
+  createJump( & jump, codeVector.size(), depth);
+  jumpVector.push_back(jump);
   pushCommand("JNEG");
   assignFlag = 1;
 }
@@ -146,48 +146,48 @@ void forDownTo() {
 void forEnd() {
 
   long long int stack;
-  long long int jumpCount = jumpStack.size() - 1;
+  long long int jumpCount = jumpVector.size() - 1;
 
-  stack = jumpStack.at(jumpCount - 1).placeInStack;
+  stack = jumpVector.at(jumpCount - 1).placeInStack;
   pushCommandOneArg("JUMP", stack);
-  addInt(jumpStack.at(jumpCount).placeInStack, codeStack.size());
-  jumpStack.pop_back();
-  jumpStack.pop_back();
+  addInt(jumpVector.at(jumpCount).placeInStack, codeVector.size());
+  jumpVector.pop_back();
+  jumpVector.pop_back();
   removeIdentifier("L" + to_string(depth));
-  removeIdentifier(forStack.back());
-  forStack.pop_back();
+  removeIdentifier(forVector.back());
+  forVector.pop_back();
   depth--;
 }
 
 void whileBegin() {
   depth++;
   Jump j;
-  createJump( & j, codeStack.size(), depth);
-  jumpStack.push_back(j);
+  createJump( & j, codeVector.size(), depth);
+  jumpVector.push_back(j);
 }
 
 void doWhile() {
 
   long long int stack;
-  long long int jumpCount = jumpStack.size() - 1;
+  long long int jumpCount = jumpVector.size() - 1;
 
-  if (jumpCount >= 3 && jumpStack.at(jumpCount - 3).depth == depth - 1) {
-    stack = jumpStack.at(jumpCount - 3).placeInStack;
+  if (jumpCount >= 3 && jumpVector.at(jumpCount - 3).depth == depth - 1) {
+    stack = jumpVector.at(jumpCount - 3).placeInStack;
     pushCommandOneArg("JUMP", stack);
 
-    addInt(jumpStack.at(jumpCount).placeInStack, codeStack.size());
-    addInt(jumpStack.at(jumpCount - 1).placeInStack, codeStack.size());
-    jumpStack.pop_back();
+    addInt(jumpVector.at(jumpCount).placeInStack, codeVector.size());
+    addInt(jumpVector.at(jumpCount - 1).placeInStack, codeVector.size());
+    jumpVector.pop_back();
 
   } else {
-    stack = jumpStack.at(jumpCount - 2).placeInStack;
+    stack = jumpVector.at(jumpCount - 2).placeInStack;
     pushCommandOneArg("JUMP", stack);
 
-    addInt(jumpStack.at(jumpCount).placeInStack, codeStack.size());
+    addInt(jumpVector.at(jumpCount).placeInStack, codeVector.size());
   }
-  jumpStack.pop_back();
-  jumpStack.pop_back();
-  jumpStack.pop_back();
+  jumpVector.pop_back();
+  jumpVector.pop_back();
+  jumpVector.pop_back();
   depth--;
   depth--;
   assignFlag = 1;
@@ -196,23 +196,23 @@ void doWhile() {
 void whileDo() {
 
   long long int stack;
-  long long int jumpCount = jumpStack.size() - 1;
+  long long int jumpCount = jumpVector.size() - 1;
 
-  if (jumpCount >= 2 && jumpStack.at(jumpCount - 2).depth == depth) {
-    stack = jumpStack.at(jumpCount - 2).placeInStack;
+  if (jumpCount >= 2 && jumpVector.at(jumpCount - 2).depth == depth) {
+    stack = jumpVector.at(jumpCount - 2).placeInStack;
     pushCommandOneArg("JUMP", stack);
 
-    addInt(jumpStack.at(jumpCount).placeInStack, codeStack.size());
-    addInt(jumpStack.at(jumpCount - 1).placeInStack, codeStack.size());
-    jumpStack.pop_back();
+    addInt(jumpVector.at(jumpCount).placeInStack, codeVector.size());
+    addInt(jumpVector.at(jumpCount - 1).placeInStack, codeVector.size());
+    jumpVector.pop_back();
   } else {
-    stack = jumpStack.at(jumpCount - 1).placeInStack;
+    stack = jumpVector.at(jumpCount - 1).placeInStack;
     pushCommandOneArg("JUMP", stack);
 
-    addInt(jumpStack.at(jumpCount).placeInStack, codeStack.size());
+    addInt(jumpVector.at(jumpCount).placeInStack, codeVector.size());
   }
-  jumpStack.pop_back();
-  jumpStack.pop_back();
+  jumpVector.pop_back();
+  jumpVector.pop_back();
   depth--;
   assignFlag = 1;
 }

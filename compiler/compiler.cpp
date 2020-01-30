@@ -1,8 +1,8 @@
 #include "compiler.hpp"
 
-vector<string> codeStack;
-vector<Jump> jumpStack;
-vector<string> forStack;
+vector<string> codeVector;
+vector<Jump> jumpVector;
+vector<string> forVector;
 map<string, Identifier> identifierMap;
 
 int assignFlag;
@@ -10,9 +10,9 @@ int writeFlag;
 long long int memCounter;
 long long int depth;
 Identifier assignTarget;
-string tabAssignTargetIndex = "null";
-string expressionArguments[2] = {"null", "null"};
-string argumentsTabIndex[2] = {"null", "null"};
+string tabAssignTargetIndex;
+string expressionArguments[2];
+string argumentsTabIndex[2];
 
 void setUp() {
   writeFlag = 0;
@@ -32,6 +32,12 @@ void setUp() {
   pushCommand("DEC");
   pushCommand("DEC");
   registerToMem(9);
+  Identifier assignTarget;
+  tabAssignTargetIndex = "null";
+  expressionArguments[0] = "null";
+  expressionArguments[1] = "null";
+  argumentsTabIndex[0] = "null";
+  argumentsTabIndex[1] = "null";
 }
 
 void zeroRegister() {
@@ -47,19 +53,19 @@ void memToRegister(long long int mem) {
 }
 
 void pushCommand(string str) {
-  codeStack.push_back(str);
+  codeVector.push_back(str);
 }
 
 void pushCommandOneArg(string str, long long int num) {
   string temp = str + " " + to_string(num);
-  codeStack.push_back(temp);
+  codeVector.push_back(temp);
 }
 
 void printCode(string outFileName) {
   ofstream out_code(outFileName);
   long long int i;
-  for (i = 0; i < codeStack.size(); i++)
-    out_code << codeStack.at(i) << endl;
+  for (i = 0; i < codeVector.size(); i++)
+    out_code << codeVector.at(i) << endl;
 }
 
 void read(int yylineno) {
@@ -141,27 +147,27 @@ long long int setToTempMem(Identifier a, Identifier aI, long long int tempMem) {
 void elseBlock() {
 
   Jump j;
-  createJump( & j, codeStack.size(), depth);
-  jumpStack.push_back(j);
+  createJump( & j, codeVector.size(), depth);
+  jumpVector.push_back(j);
   pushCommand("JUMP");
 
-  long long int jumpCount = jumpStack.size() - 2;
-  Jump jump = jumpStack.at(jumpCount);
-  addInt(jump.placeInStack, codeStack.size());
+  long long int jumpCount = jumpVector.size() - 2;
+  Jump jump = jumpVector.at(jumpCount);
+  addInt(jump.placeInStack, codeVector.size());
   jumpCount--;
-  if (jumpCount >= 0 && jumpStack.at(jumpCount).depth == depth) {
-    addInt(jumpStack.at(jumpCount).placeInStack, codeStack.size());
+  if (jumpCount >= 0 && jumpVector.at(jumpCount).depth == depth) {
+    addInt(jumpVector.at(jumpCount).placeInStack, codeVector.size());
   }
   assignFlag = 1;
 }
 
 void elseEndIfBlock() {
 
-  addInt(jumpStack.at(jumpStack.size() - 1).placeInStack, codeStack.size());
-  jumpStack.pop_back();
-  jumpStack.pop_back();
-  if (jumpStack.size() >= 1 && jumpStack.at(jumpStack.size() - 1).depth == depth) {
-    jumpStack.pop_back();
+  addInt(jumpVector.at(jumpVector.size() - 1).placeInStack, codeVector.size());
+  jumpVector.pop_back();
+  jumpVector.pop_back();
+  if (jumpVector.size() >= 1 && jumpVector.at(jumpVector.size() - 1).depth == depth) {
+    jumpVector.pop_back();
   }
   depth--;
   assignFlag = 1;
@@ -169,14 +175,14 @@ void elseEndIfBlock() {
 
 void endIfBlock() {
 
-  long long int jumpCount = jumpStack.size() - 1;
-  addInt(jumpStack.at(jumpCount).placeInStack, codeStack.size());
+  long long int jumpCount = jumpVector.size() - 1;
+  addInt(jumpVector.at(jumpCount).placeInStack, codeVector.size());
   jumpCount--;
-  if (jumpCount >= 0 && jumpStack.at(jumpCount).depth == depth) {
-    addInt(jumpStack.at(jumpCount).placeInStack, codeStack.size());
-    jumpStack.pop_back();
+  if (jumpCount >= 0 && jumpVector.at(jumpCount).depth == depth) {
+    addInt(jumpVector.at(jumpCount).placeInStack, codeVector.size());
+    jumpVector.pop_back();
   }
-  jumpStack.pop_back();
+  jumpVector.pop_back();
   depth--;
   assignFlag = 1;
 }
@@ -340,7 +346,7 @@ void createJump(Jump * j, long long int stack, long long int depth) {
 }
 
 void addInt(long long int command, long long int val) {
-  codeStack.at(command) = codeStack.at(command) + " " + to_string(val);
+  codeVector.at(command) = codeVector.at(command) + " " + to_string(val);
 }
 
 void ident(string variable, int yylineno) {

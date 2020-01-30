@@ -14,7 +14,7 @@ using namespace std;
 
 typedef struct {
 	string name;
-   string type; 		//number = NUM, identifier = IDE, array = ARR
+   string type;
    int initialized;
    int local;
    long long int begin;
@@ -28,9 +28,9 @@ typedef struct {
     long long int depth;
 } Jump;
 
-extern vector<string> codeStack;
-extern vector<Jump> jumpStack;
-extern vector<string> forStack;
+extern vector<string> codeVector;
+extern vector<Jump> jumpVector;
+extern vector<string> forVector;
 extern map<string, Identifier> identifierMap;
 
 extern int assignFlag;
@@ -78,15 +78,15 @@ void forDownTo();
 void forEnd();
 
 //HELPERS
+string decToBin(long long int n);
+void setUp();
 void createIdentifier(Identifier *s, string name, long long int isLocal, long long int isArray, string type, long long int begin);
 void insertIdentifier(string key, Identifier i);
 void removeIdentifier(string key);
-void setUp();
 void printCode(string outFileName);
 void createJump(Jump *j, long long int stack, long long int depth);
 long long int setToTempMem(Identifier a, Identifier aI, long long int tempMem);
 long long int isPowerOf2(string value);
-string decToBin(long long int n);
 
 //VIRTUAL MACHINE
 void registerToMem(long long int mem);

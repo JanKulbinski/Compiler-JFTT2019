@@ -11,6 +11,11 @@ bison.y - parser
 lexer.l - lekser
 Makefile - kompiluje całość
 
+Testowane w środowisku:
+bison --version : 3.0.4
+flex --version : 2.6.4
+g++ --version : 7.4.0
+
 Uruchomienie:
 ./kompilator input output
 
