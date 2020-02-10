@@ -7,6 +7,7 @@ The language provides basic features such as:
  * for, for down, while and do while loops
  * mathematical operations: multiplication, division, addition, subtraction, modulo (mind unwonted definitions of modulo for negative numbers! More info: [task.pdf](task.pdf))
  * working only with integers (rounds if necessary)
+ * reading user input and writing output
  
  
 A more precise description of the language and virtual machine for which compiler translates programs can be found in the file [task.pdf](task.pdf). The language and virtual machine were created by Maciej Gębala, who has led this course.
